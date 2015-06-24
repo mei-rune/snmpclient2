@@ -1,15 +1,15 @@
-package snmpgo_test
+package snmpclient2_test
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/k-sone/snmpgo"
+	"github.com/runner-mei/snmpclient2"
 )
 
 func TestMessageV1(t *testing.T) {
-	pdu := snmpgo.NewPdu(snmpgo.V2c, snmpgo.GetRequest)
-	msg := snmpgo.ToMessageV1(snmpgo.NewMessage(snmpgo.V2c, pdu))
+	pdu := snmpclient2.NewPdu(snmpclient2.V2c, snmpclient2.GetRequest)
+	msg := snmpclient2.NewMessage(snmpclient2.V2c, pdu).(*snmpclient2.MessageV1)
 	b, _ := pdu.Marshal()
 	msg.SetPduBytes(b)
 	msg.Community = []byte("MyCommunity")
@@ -25,13 +25,13 @@ func TestMessageV1(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
 	expStr := `{"Version": "2c", "Community": "MyCommunity", ` +
 		`"Pdu": {"Type": "GetRequest", "RequestId": "0", "ErrorStatus": ` +
 		`"NoError", "ErrorIndex": "0", "VarBinds": []}}`
-	m := snmpgo.NewMessage(snmpgo.V2c, pdu)
+	m := snmpclient2.NewMessage(snmpclient2.V2c, pdu)
 	rest, err := m.Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
@@ -42,8 +42,8 @@ func TestMessageV1(t *testing.T) {
 }
 
 func TestMessageV3(t *testing.T) {
-	pdu := snmpgo.NewPdu(snmpgo.V3, snmpgo.GetRequest)
-	msg := snmpgo.ToMessageV3(snmpgo.NewMessage(snmpgo.V3, pdu))
+	pdu := snmpclient2.NewPdu(snmpclient2.V3, snmpclient2.GetRequest)
+	msg := snmpclient2.NewMessage(snmpclient2.V3, pdu).(*snmpclient2.MessageV3)
 	b, _ := pdu.Marshal()
 	msg.SetPduBytes(b)
 	msg.MessageId = 123
@@ -75,7 +75,7 @@ func TestMessageV3(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
 	expStr := `{"Version": "3", "GlobalData": {"MessageId": "123", "MessageMaxSize": "321", ` +
@@ -85,7 +85,7 @@ func TestMessageV3(t *testing.T) {
 		`"PrivParameter": "dd:ee:ff"}, "Pdu": {"Type": "GetRequest", "RequestId": "0", ` +
 		`"ErrorStatus": "NoError", "ErrorIndex": "0", "ContextEngineId": "", ` +
 		`"ContextName": "", "VarBinds": []}}`
-	m := snmpgo.NewMessage(snmpgo.V3, pdu)
+	m := snmpclient2.NewMessage(snmpclient2.V3, pdu)
 	rest, err := m.Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
@@ -96,12 +96,12 @@ func TestMessageV3(t *testing.T) {
 }
 
 func TestMessageProcessingV1(t *testing.T) {
-	snmp, _ := snmpgo.NewSNMP(snmpgo.SNMPArguments{
-		Version:   snmpgo.V2c,
+	snmp, _ := snmpclient2.NewSNMP(snmpclient2.SNMPArguments{
+		Version:   snmpclient2.V2c,
 		Community: "public",
 	})
-	mp := snmpgo.NewMessageProcessing(snmpgo.V2c)
-	pdu := snmpgo.NewPdu(snmpgo.V2c, snmpgo.GetRequest)
+	mp := snmpclient2.NewMessageProcessing(snmpclient2.V2c)
+	pdu := snmpclient2.NewPdu(snmpclient2.V2c, snmpclient2.GetRequest)
 
 	msg, err := mp.PrepareOutgoingMessage(snmp, pdu)
 	if err != nil {
@@ -126,8 +126,8 @@ func TestMessageProcessingV1(t *testing.T) {
 		t.Error("PrepareDataElements() - pdu type check")
 	}
 
-	pdu = snmpgo.NewPdu(snmpgo.V2c, snmpgo.GetResponse)
-	rmsg := snmpgo.ToMessageV1(snmpgo.NewMessage(snmpgo.V1, pdu))
+	pdu = snmpclient2.NewPdu(snmpclient2.V2c, snmpclient2.GetResponse)
+	rmsg := snmpclient2.NewMessage(snmpclient2.V2c, pdu).(*snmpclient2.MessageV1)
 	b, _ = rmsg.Marshal()
 	_, err = mp.PrepareDataElements(snmp, msg, b)
 	if err == nil {
@@ -136,7 +136,7 @@ func TestMessageProcessingV1(t *testing.T) {
 
 	pdu.SetRequestId(requestId)
 	pduBytes, _ := pdu.Marshal()
-	rmsg = snmpgo.ToMessageV1(snmpgo.NewMessage(snmpgo.V2c, pdu))
+	rmsg = snmpclient2.NewMessage(snmpclient2.V2c, pdu).(*snmpclient2.MessageV1)
 	rmsg.Community = []byte("public")
 	rmsg.SetPduBytes(pduBytes)
 	b, _ = rmsg.Marshal()
@@ -147,20 +147,22 @@ func TestMessageProcessingV1(t *testing.T) {
 }
 
 func TestMessageProcessingV3(t *testing.T) {
-	snmp, _ := snmpgo.NewSNMP(snmpgo.SNMPArguments{
-		Version:       snmpgo.V3,
+	snmp, _ := snmpclient2.NewSNMP(snmpclient2.SNMPArguments{
+		Version:       snmpclient2.V3,
 		UserName:      "myName",
-		SecurityLevel: snmpgo.AuthPriv,
+		SecurityLevel: snmpclient2.AuthPriv,
 		AuthPassword:  "aaaaaaaa",
-		AuthProtocol:  snmpgo.Md5,
+		AuthProtocol:  snmpclient2.Md5,
 		PrivPassword:  "bbbbbbbb",
-		PrivProtocol:  snmpgo.Des,
+		PrivProtocol:  snmpclient2.Des,
 	})
-	mp := snmpgo.NewMessageProcessing(snmpgo.V3)
-	usm := snmpgo.ToUsm(mp.Security())
+	var mss snmpclient2.Message = &snmpclient2.MessageV1{}
+	t.Log(mss)
+	mp := snmpclient2.NewMessageProcessing(snmpclient2.V3)
+	usm := mp.Security().(*snmpclient2.USM)
 	usm.AuthKey = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	usm.PrivKey = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	pdu := snmpgo.NewPdu(snmpgo.V3, snmpgo.GetRequest)
+	pdu := snmpclient2.NewPdu(snmpclient2.V3, snmpclient2.GetRequest)
 
 	msg, err := mp.PrepareOutgoingMessage(snmp, pdu)
 	if err != nil {
@@ -172,7 +174,7 @@ func TestMessageProcessingV3(t *testing.T) {
 	if pdu.RequestId() == 0 {
 		t.Error("PrepareOutgoingMessage() - request id")
 	}
-	msgv3 := snmpgo.ToMessageV3(msg)
+	msgv3 := msg.(*snmpclient2.MessageV3)
 	if msgv3.MessageId == 0 {
 		t.Error("PrepareOutgoingMessage() - message id")
 	}
@@ -196,15 +198,15 @@ func TestMessageProcessingV3(t *testing.T) {
 		t.Error("PrepareDataElements() - pdu type check")
 	}
 
-	pdu = snmpgo.NewPdu(snmpgo.V3, snmpgo.GetResponse)
-	rmsg := snmpgo.ToMessageV3(snmpgo.NewMessage(snmpgo.V3, pdu))
+	pdu = snmpclient2.NewPdu(snmpclient2.V3, snmpclient2.GetResponse)
+	rmsg := snmpclient2.NewMessage(snmpclient2.V3, pdu).(*snmpclient2.MessageV3)
 	b, _ = rmsg.Marshal()
 	_, err = mp.PrepareDataElements(snmp, msg, b)
 	if err == nil {
 		t.Error("PrepareDataElements() - message id check")
 	}
 
-	rmsg = snmpgo.ToMessageV3(snmpgo.NewMessage(snmpgo.V3, pdu))
+	rmsg = snmpclient2.NewMessage(snmpclient2.V3, pdu).(*snmpclient2.MessageV3)
 	rmsg.AuthEngineId = []byte{0, 0, 0, 0, 0}
 	rmsg.MessageId = messageId
 	b, _ = rmsg.Marshal()
@@ -213,7 +215,7 @@ func TestMessageProcessingV3(t *testing.T) {
 		t.Error("PrepareDataElements() - security model check")
 	}
 
-	pdu.(*snmpgo.ScopedPdu).ContextEngineId = rmsg.AuthEngineId
+	pdu.(*snmpclient2.ScopedPdu).ContextEngineId = rmsg.AuthEngineId
 	pduBytes, _ := pdu.Marshal()
 	rmsg.SetPduBytes(pduBytes)
 	rmsg.SecurityModel = 3

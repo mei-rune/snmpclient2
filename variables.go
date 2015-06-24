@@ -1,4 +1,4 @@
-package snmpgo
+package snmpclient2
 
 import (
 	"bytes"
@@ -12,10 +12,14 @@ import (
 )
 
 type Variable interface {
-	// Return a BigInt representation of this Variable if such a representation exists
-	BigInt() (*big.Int, error)
+	Int() int64
+	Uint() uint64
 	// Return a string representation of this Variable
-	String() string
+	ToString() string
+
+	IsError() bool
+	ErrorMessage() string
+
 	// Return a string of type
 	Type() string
 	Marshal() ([]byte, error)
@@ -26,12 +30,31 @@ type Integer struct {
 	Value int32
 }
 
-func (v *Integer) BigInt() (*big.Int, error) {
-	return big.NewInt(int64(v.Value)), nil
+func (v *Integer) IsError() bool {
+	return false
+}
+
+func (v *Integer) ErrorMessage() string {
+	panic(UnsupportedOperation)
+}
+
+func (v *Integer) Int() int64 {
+	return int64(v.Value)
+}
+
+func (v *Integer) Uint() uint64 {
+	if v.Value < 0 {
+		panic(UnsupportedOperation)
+	}
+	return uint64(v.Value)
+}
+
+func (v *Integer) ToString() string {
+	return strconv.FormatInt(int64(v.Value), 10)
 }
 
 func (v *Integer) String() string {
-	return strconv.FormatInt(int64(v.Value), 10)
+	return "[int]" + strconv.FormatInt(int64(v.Value), 10)
 }
 
 func (v *Integer) Type() string {
@@ -54,17 +77,33 @@ type OctetString struct {
 	Value []byte
 }
 
-func (v *OctetString) BigInt() (*big.Int, error) {
-	return nil, UnsupportedOperation
+func (v *OctetString) IsError() bool {
+	return false
 }
 
-func (v *OctetString) String() string {
+func (v *OctetString) ErrorMessage() string {
+	panic(UnsupportedOperation)
+}
+
+func (v *OctetString) Int() int64 {
+	panic(UnsupportedOperation)
+}
+
+func (v *OctetString) Uint() uint64 {
+	panic(UnsupportedOperation)
+}
+
+func (v *OctetString) ToString() string {
 	for _, c := range v.Value {
 		if !strconv.IsPrint(rune(c)) {
-			return toHexStr(v.Value, ":")
+			return ToHexStr(v.Value, ":")
 		}
 	}
 	return string(v.Value)
+}
+
+func (v *OctetString) String() string {
+	return "[octets]" + v.ToString()
 }
 
 func (v *OctetString) Type() string {
@@ -85,12 +124,28 @@ func NewOctetString(b []byte) *OctetString {
 
 type Null struct{}
 
-func (v *Null) BigInt() (*big.Int, error) {
-	return nil, UnsupportedOperation
+func (v *Null) IsError() bool {
+	return false
+}
+
+func (v *Null) ErrorMessage() string {
+	panic(UnsupportedOperation)
+}
+
+func (v *Null) Int() int64 {
+	panic(UnsupportedOperation)
+}
+
+func (v *Null) Uint() uint64 {
+	panic(UnsupportedOperation)
+}
+
+func (v *Null) ToString() string {
+	return ""
 }
 
 func (v *Null) String() string {
-	return ""
+	return "[null]"
 }
 
 func (v *Null) Type() string {
@@ -113,12 +168,28 @@ type Oid struct {
 	Value asn1.ObjectIdentifier
 }
 
-func (v *Oid) BigInt() (*big.Int, error) {
-	return nil, UnsupportedOperation
+func (v *Oid) IsError() bool {
+	return false
+}
+
+func (v *Oid) ErrorMessage() string {
+	panic(UnsupportedOperation)
+}
+
+func (v *Oid) Int() int64 {
+	panic(UnsupportedOperation)
+}
+
+func (v *Oid) Uint() uint64 {
+	panic(UnsupportedOperation)
+}
+
+func (v *Oid) ToString() string {
+	return v.Value.String()
 }
 
 func (v *Oid) String() string {
-	return v.Value.String()
+	return "[oid]" + v.Value.String()
 }
 
 func (v *Oid) Type() string {
@@ -182,7 +253,7 @@ func (v *Oid) Equal(o *Oid) bool {
 
 // Returns Oid with additional sub-ids
 func (v *Oid) AppendSubIds(subs []int) (*Oid, error) {
-	buf := bytes.NewBufferString(v.String())
+	buf := bytes.NewBufferString(v.ToString())
 	for _, i := range subs {
 		buf.WriteString(".")
 		buf.WriteString(strconv.Itoa(i))
@@ -326,20 +397,36 @@ type Ipaddress struct {
 	OctetString
 }
 
-func (v *Ipaddress) BigInt() (*big.Int, error) {
+func (v *Ipaddress) Int() int64 {
 	var t uint32
 	for i, b := range v.Value {
 		t = t + (uint32(b) << uint(24-8*i))
 	}
-	return big.NewInt(int64(t)), nil
+	return int64(t)
 }
 
-func (v *Ipaddress) String() string {
+func (v *Ipaddress) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + v.ToString() + "\""), nil
+}
+
+func (v *Ipaddress) Uint() uint64 {
+	var t uint32
+	for i, b := range v.Value {
+		t = t + (uint32(b) << uint(24-8*i))
+	}
+	return uint64(t)
+}
+
+func (v *Ipaddress) ToString() string {
 	s := make([]string, len(v.Value))
 	for i, b := range v.Value {
 		s[i] = strconv.Itoa(int(b))
 	}
 	return strings.Join(s, ".")
+}
+
+func (v *Ipaddress) String() string {
+	return "ip" + v.ToString()
 }
 
 func (v *Ipaddress) Type() string {
@@ -366,12 +453,28 @@ type Counter32 struct {
 	Value uint32
 }
 
-func (v *Counter32) BigInt() (*big.Int, error) {
-	return big.NewInt(int64(v.Value)), nil
+func (v *Counter32) IsError() bool {
+	return false
+}
+
+func (v *Counter32) ErrorMessage() string {
+	panic(UnsupportedOperation)
+}
+
+func (v *Counter32) Int() int64 {
+	return int64(v.Value)
+}
+
+func (v *Counter32) Uint() uint64 {
+	return uint64(v.Value)
+}
+
+func (v *Counter32) ToString() string {
+	return strconv.FormatInt(int64(v.Value), 10)
 }
 
 func (v *Counter32) String() string {
-	return strconv.FormatInt(int64(v.Value), 10)
+	return "[counter32]" + strconv.FormatInt(int64(v.Value), 10)
 }
 
 func (v *Counter32) Type() string {
@@ -398,6 +501,10 @@ type Gauge32 struct {
 	Counter32
 }
 
+func (v *Gauge32) String() string {
+	return "[gauge32]" + strconv.FormatInt(int64(v.Value), 10)
+}
+
 func (v *Gauge32) Type() string {
 	return "Gauge32"
 }
@@ -420,6 +527,10 @@ func NewGauge32(i uint32) *Gauge32 {
 
 type TimeTicks struct {
 	Counter32
+}
+
+func (v *TimeTicks) String() string {
+	return "[timeticks]" + strconv.FormatInt(int64(v.Value), 10)
 }
 
 func (v *TimeTicks) Type() string {
@@ -446,8 +557,12 @@ type Opaque struct {
 	OctetString
 }
 
+func (v *Opaque) ToString() string {
+	return ToHexStr(v.Value, ":")
+}
+
 func (v *Opaque) String() string {
-	return toHexStr(v.Value, ":")
+	return "[opaque]" + v.ToString()
 }
 
 func (v *Opaque) Type() string {
@@ -474,12 +589,31 @@ type Counter64 struct {
 	Value uint64
 }
 
-func (v *Counter64) BigInt() (*big.Int, error) {
-	return big.NewInt(0).SetUint64(v.Value), nil
+func (v *Counter64) IsError() bool {
+	return false
+}
+
+func (v *Counter64) ErrorMessage() string {
+	panic(UnsupportedOperation)
+}
+
+func (v *Counter64) Int() int64 {
+	if v.Value > math.MaxInt64 {
+		panic(UnsupportedOperation)
+	}
+	return int64(v.Value)
+}
+
+func (v *Counter64) Uint() uint64 {
+	return v.Value
+}
+
+func (v *Counter64) ToString() string {
+	return strconv.FormatUint(v.Value, 10)
 }
 
 func (v *Counter64) String() string {
-	return strconv.FormatUint(v.Value, 10)
+	return "[counter64]" + strconv.FormatUint(v.Value, 10)
 }
 
 func (v *Counter64) Type() string {
@@ -507,6 +641,18 @@ type NoSucheObject struct {
 	Null
 }
 
+func (v *NoSucheObject) IsError() bool {
+	return true
+}
+
+func (v *NoSucheObject) ErrorMessage() string {
+	return "NoSucheObject"
+}
+
+func (v *NoSucheObject) String() string {
+	return "[error]NoSucheObject"
+}
+
 func (v *NoSucheObject) Type() string {
 	return "NoSucheObject"
 }
@@ -527,6 +673,18 @@ type NoSucheInstance struct {
 	Null
 }
 
+func (v *NoSucheInstance) IsError() bool {
+	return true
+}
+
+func (v *NoSucheInstance) ErrorMessage() string {
+	return "NoSucheInstance"
+}
+
+func (v *NoSucheInstance) String() string {
+	return "[error]NoSucheInstance"
+}
+
 func (v *NoSucheInstance) Type() string {
 	return "NoSucheInstance"
 }
@@ -545,6 +703,18 @@ func NewNoSucheInstance() *NoSucheInstance {
 
 type EndOfMibView struct {
 	Null
+}
+
+func (v *EndOfMibView) IsError() bool {
+	return true
+}
+
+func (v *EndOfMibView) ErrorMessage() string {
+	return "EndOfMibView"
+}
+
+func (v *EndOfMibView) String() string {
+	return "[error]EndOfMibView"
 }
 
 func (v *EndOfMibView) Type() string {
@@ -628,7 +798,7 @@ func unmarshalVariable(b []byte) (v Variable, rest []byte, err error) {
 		}
 	} else {
 		err = asn1.StructuralError{fmt.Sprintf(
-			"Unknown ASN.1 object : %s", toHexStr(b, " "))}
+			"Unknown ASN.1 object : %s", ToHexStr(b, " "))}
 	}
 
 	return nil, nil, err
@@ -641,7 +811,7 @@ func validateUnmarshal(b []byte, tag byte) error {
 	if b[0] != tag {
 		return asn1.StructuralError{fmt.Sprintf(
 			"Invalid ASN.1 object - expected [%02x], actual [%02x] : %s",
-			tag, b[0], toHexStr(b, " "))}
+			tag, b[0], ToHexStr(b, " "))}
 	}
 	return nil
 }

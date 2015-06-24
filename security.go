@@ -1,4 +1,4 @@
-package snmpgo
+package snmpclient2
 
 import (
 	"bytes"
@@ -16,17 +16,17 @@ import (
 	"time"
 )
 
-type security interface {
-	GenerateRequestMessage(*SNMP, message) error
-	ProcessIncomingMessage(*SNMP, message, message) error
+type Security interface {
+	GenerateRequestMessage(*SNMP, Message) error
+	ProcessIncomingMessage(*SNMP, Message, Message) error
 	Discover(*SNMP) error
 	String() string
 }
 
 type community struct{}
 
-func (c *community) GenerateRequestMessage(snmp *SNMP, sendMsg message) (err error) {
-	m := sendMsg.(*messageV1)
+func (c *community) GenerateRequestMessage(snmp *SNMP, sendMsg Message) (err error) {
+	m := sendMsg.(*MessageV1)
 	m.Community = []byte(snmp.args.Community)
 
 	b, err := m.Pdu().Marshal()
@@ -38,9 +38,9 @@ func (c *community) GenerateRequestMessage(snmp *SNMP, sendMsg message) (err err
 	return
 }
 
-func (c *community) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg message) (err error) {
-	sm := sendMsg.(*messageV1)
-	rm := recvMsg.(*messageV1)
+func (c *community) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg Message) (err error) {
+	sm := sendMsg.(*MessageV1)
+	rm := recvMsg.(*MessageV1)
 
 	if !bytes.Equal(sm.Community, rm.Community) {
 		return ResponseError{
@@ -56,7 +56,7 @@ func (c *community) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg message)
 		return ResponseError{
 			Cause:   err,
 			Message: "Failed to Unmarshal Pdu",
-			Detail:  fmt.Sprintf("Pdu Bytes - [%s]", toHexStr(rm.PduBytes(), " ")),
+			Detail:  fmt.Sprintf("Pdu Bytes - [%s]", ToHexStr(rm.PduBytes(), " ")),
 		}
 	}
 	return
@@ -91,7 +91,7 @@ func (d discoveryStatus) String() string {
 	}
 }
 
-type usm struct {
+type USM struct {
 	DiscoveryStatus discoveryStatus
 	AuthEngineId    []byte
 	AuthEngineBoots int64
@@ -101,9 +101,9 @@ type usm struct {
 	UpdatedTime     time.Time
 }
 
-func (u *usm) GenerateRequestMessage(snmp *SNMP, sendMsg message) (err error) {
+func (u *USM) GenerateRequestMessage(snmp *SNMP, sendMsg Message) (err error) {
 	// setup message
-	m := sendMsg.(*messageV3)
+	m := sendMsg.(*MessageV3)
 
 	if u.DiscoveryStatus > noDiscovered {
 		m.UserName = []byte(snmp.args.UserName)
@@ -156,15 +156,15 @@ func (u *usm) GenerateRequestMessage(snmp *SNMP, sendMsg message) (err error) {
 	return
 }
 
-func (u *usm) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg message) (err error) {
-	sm := sendMsg.(*messageV3)
-	rm := recvMsg.(*messageV3)
+func (u *USM) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg Message) (err error) {
+	sm := sendMsg.(*MessageV3)
+	rm := recvMsg.(*MessageV3)
 
 	// RFC3411 Section 5
 	if l := len(rm.AuthEngineId); l < 5 || l > 32 {
 		return ResponseError{
 			Message: fmt.Sprintf("AuthEngineId length is range 5..32, value [%s]",
-				toHexStr(rm.AuthEngineId, "")),
+				ToHexStr(rm.AuthEngineId, "")),
 		}
 	}
 	if rm.AuthEngineBoots < 0 || rm.AuthEngineBoots > math.MaxInt32 {
@@ -184,7 +184,7 @@ func (u *usm) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg message) (err 
 			return ResponseError{
 				Message: fmt.Sprintf(
 					"AuthEngineId mismatch - expected [%s], actual [%s]",
-					toHexStr(sm.AuthEngineId, ""), toHexStr(rm.AuthEngineId, "")),
+					ToHexStr(sm.AuthEngineId, ""), ToHexStr(rm.AuthEngineId, "")),
 				Detail: fmt.Sprintf("%s vs %s", sm, rm),
 			}
 		}
@@ -210,7 +210,7 @@ func (u *usm) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg message) (err 
 		if !hmac.Equal(rm.AuthParameter, digest) {
 			return ResponseError{
 				Message: fmt.Sprintf("Failed to authenticate - expected [%s], actual [%s]",
-					toHexStr(rm.AuthParameter, ""), toHexStr(digest, "")),
+					ToHexStr(rm.AuthParameter, ""), ToHexStr(digest, "")),
 			}
 		}
 
@@ -257,7 +257,7 @@ func (u *usm) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg message) (err 
 		return ResponseError{
 			Cause:   err,
 			Message: fmt.Sprintf("Failed to Unmarshal Pdu%s", note),
-			Detail:  fmt.Sprintf("Pdu Bytes - [%s]", toHexStr(rm.PduBytes(), " ")),
+			Detail:  fmt.Sprintf("Pdu Bytes - [%s]", ToHexStr(rm.PduBytes(), " ")),
 		}
 	}
 	p := rm.Pdu().(*ScopedPdu)
@@ -272,7 +272,7 @@ func (u *usm) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg message) (err 
 		if !bytes.Equal(cxtId, p.ContextEngineId) {
 			return ResponseError{
 				Message: fmt.Sprintf("ContextEngineId mismatch - expected [%s], actual [%s]",
-					toHexStr(cxtId, ""), toHexStr(p.ContextEngineId, "")),
+					ToHexStr(cxtId, ""), ToHexStr(p.ContextEngineId, "")),
 			}
 		}
 		if name := snmp.args.ContextName; name != string(p.ContextName) {
@@ -290,7 +290,7 @@ func (u *usm) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg message) (err 
 	return
 }
 
-func (u *usm) Discover(snmp *SNMP) (err error) {
+func (u *USM) Discover(snmp *SNMP) (err error) {
 	if snmp.args.SecurityEngineId != "" {
 		securityEngineId, _ := engineIdToBytes(snmp.args.SecurityEngineId)
 		u.SetAuthEngineId(snmp, securityEngineId)
@@ -324,17 +324,17 @@ func (u *usm) Discover(snmp *SNMP) (err error) {
 	return
 }
 
-func (u *usm) SetAuthEngineId(snmp *SNMP, authEngineId []byte) {
+func (u *USM) SetAuthEngineId(snmp *SNMP, authEngineId []byte) {
 	u.AuthEngineId = authEngineId
 	if len(snmp.args.AuthPassword) > 0 {
-		u.AuthKey = passwordToKey(snmp.args.AuthProtocol, snmp.args.AuthPassword, authEngineId)
+		u.AuthKey = PasswordToKey(snmp.args.AuthProtocol, snmp.args.AuthPassword, authEngineId)
 	}
 	if len(snmp.args.PrivPassword) > 0 {
-		u.PrivKey = passwordToKey(snmp.args.AuthProtocol, snmp.args.PrivPassword, authEngineId)
+		u.PrivKey = PasswordToKey(snmp.args.AuthProtocol, snmp.args.PrivPassword, authEngineId)
 	}
 }
 
-func (u *usm) UpdateEngineBootsTime() error {
+func (u *USM) UpdateEngineBootsTime() error {
 	now := time.Now()
 	u.AuthEngineTime += int64(now.Sub(u.UpdatedTime).Seconds())
 	if u.AuthEngineTime > math.MaxInt32 {
@@ -349,13 +349,13 @@ func (u *usm) UpdateEngineBootsTime() error {
 	return nil
 }
 
-func (u *usm) SynchronizeEngineBootsTime(engineBoots, engineTime int64) {
+func (u *USM) SynchronizeEngineBootsTime(engineBoots, engineTime int64) {
 	u.AuthEngineBoots = engineBoots
 	u.AuthEngineTime = engineTime
 	u.UpdatedTime = time.Now()
 }
 
-func (u *usm) CheckTimeliness(engineBoots, engineTime int64) error {
+func (u *USM) CheckTimeliness(engineBoots, engineTime int64) error {
 	// RFC3414 Section 3.2 7) b)
 	if engineBoots == math.MaxInt32 ||
 		engineBoots < u.AuthEngineBoots ||
@@ -369,15 +369,15 @@ func (u *usm) CheckTimeliness(engineBoots, engineTime int64) error {
 	return nil
 }
 
-func (u *usm) String() string {
+func (u *USM) String() string {
 	return fmt.Sprintf(
 		`{"DiscoveryStatus": "%s", "AuthEngineId": "%s", "AuthEngineBoots": "%d", `+
 			`"AuthEngineTime": "%d", "AuthKey": "%s", "PrivKey": "%s", "UpdatedTime": "%s"}`,
-		u.DiscoveryStatus, toHexStr(u.AuthEngineId, ""), u.AuthEngineBoots, u.AuthEngineTime,
-		toHexStr(u.AuthKey, ""), toHexStr(u.PrivKey, ""), u.UpdatedTime)
+		u.DiscoveryStatus, ToHexStr(u.AuthEngineId, ""), u.AuthEngineBoots, u.AuthEngineTime,
+		ToHexStr(u.AuthKey, ""), ToHexStr(u.PrivKey, ""), u.UpdatedTime)
 }
 
-func mac(msg *messageV3, proto AuthProtocol, key []byte) ([]byte, error) {
+func mac(msg *MessageV3, proto AuthProtocol, key []byte) ([]byte, error) {
 	tmp := msg.AuthParameter
 	msg.AuthParameter = padding([]byte{}, 12)
 	msgBytes, err := msg.Marshal()
@@ -397,15 +397,15 @@ func mac(msg *messageV3, proto AuthProtocol, key []byte) ([]byte, error) {
 	return h.Sum(nil)[:12], nil
 }
 
-func encrypt(msg *messageV3, proto PrivProtocol, key []byte) (err error) {
+func encrypt(msg *MessageV3, proto PrivProtocol, key []byte) (err error) {
 	var dst, priv []byte
 	src := msg.PduBytes()
 
 	switch proto {
 	case Des:
-		dst, priv, err = encryptDES(src, key, int32(msg.AuthEngineBoots), genSalt32())
+		dst, priv, err = EncryptDES(src, key, int32(msg.AuthEngineBoots), genSalt32())
 	case Aes:
-		dst, priv, err = encryptAES(
+		dst, priv, err = EncryptAES(
 			src, key, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime), genSalt64())
 	}
 	if err != nil {
@@ -422,7 +422,7 @@ func encrypt(msg *messageV3, proto PrivProtocol, key []byte) (err error) {
 	return
 }
 
-func decrypt(msg *messageV3, proto PrivProtocol, key, privParam []byte) (err error) {
+func decrypt(msg *MessageV3, proto PrivProtocol, key, privParam []byte) (err error) {
 	var raw asn1.RawValue
 	_, err = asn1.Unmarshal(msg.PduBytes(), &raw)
 	if err != nil {
@@ -431,15 +431,15 @@ func decrypt(msg *messageV3, proto PrivProtocol, key, privParam []byte) (err err
 	if raw.Class != classUniversal || raw.Tag != tagOctetString || raw.IsCompound {
 		return asn1.StructuralError{fmt.Sprintf(
 			"Invalid encrypted Pdu object - Class [%02x], Tag [%02x] : [%s]",
-			raw.Class, raw.Tag, toHexStr(msg.PduBytes(), " "))}
+			raw.Class, raw.Tag, ToHexStr(msg.PduBytes(), " "))}
 	}
 
 	var dst []byte
 	switch proto {
 	case Des:
-		dst, err = decryptDES(raw.Bytes, key, privParam)
+		dst, err = DecryptDES(raw.Bytes, key, privParam)
 	case Aes:
-		dst, err = decryptAES(
+		dst, err = DecryptAES(
 			raw.Bytes, key, privParam, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime))
 	}
 
@@ -449,7 +449,7 @@ func decrypt(msg *messageV3, proto PrivProtocol, key, privParam []byte) (err err
 	return
 }
 
-func encryptDES(src, key []byte, engineBoots, salt int32) (dst, privParam []byte, err error) {
+func EncryptDES(src, key []byte, engineBoots, salt int32) (dst, privParam []byte, err error) {
 
 	block, err := des.NewCipher(key[:8])
 	if err != nil {
@@ -470,7 +470,7 @@ func encryptDES(src, key []byte, engineBoots, salt int32) (dst, privParam []byte
 	return
 }
 
-func decryptDES(src, key, privParam []byte) (dst []byte, err error) {
+func DecryptDES(src, key, privParam []byte) (dst []byte, err error) {
 
 	if len(src)%des.BlockSize != 0 {
 		err = ArgumentError{
@@ -500,7 +500,7 @@ func decryptDES(src, key, privParam []byte) (dst []byte, err error) {
 	return
 }
 
-func encryptAES(src, key []byte, engineBoots, engineTime int32, salt int64) (
+func EncryptAES(src, key []byte, engineBoots, engineTime int32, salt int64) (
 	dst, privParam []byte, err error) {
 
 	block, err := aes.NewCipher(key[:16])
@@ -524,7 +524,7 @@ func encryptAES(src, key []byte, engineBoots, engineTime int32, salt int64) (
 	return
 }
 
-func decryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
+func DecryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 	dst []byte, err error) {
 
 	if len(privParam) != 8 {
@@ -552,7 +552,7 @@ func decryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 	return
 }
 
-func passwordToKey(proto AuthProtocol, password string, engineId []byte) []byte {
+func PasswordToKey(proto AuthProtocol, password string, engineId []byte) []byte {
 	var h hash.Hash
 	switch proto {
 	case Md5:

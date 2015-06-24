@@ -1,4 +1,4 @@
-package snmpgo
+package snmpclient2
 
 import (
 	"encoding/asn1"
@@ -44,7 +44,7 @@ func (v *VarBind) Unmarshal(b []byte) (rest []byte, err error) {
 	if raw.Class != classUniversal || raw.Tag != tagSequence || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid VarBind object - Class [%02x], Tag [%02x] : [%s]",
-			raw.Class, raw.Tag, toHexStr(b, " "))}
+			raw.Class, raw.Tag, ToHexStr(b, " "))}
 	}
 
 	var oid Oid
@@ -66,11 +66,11 @@ func (v *VarBind) Unmarshal(b []byte) (rest []byte, err error) {
 func (v *VarBind) String() string {
 	var oid, vtype, value string
 	if v.Oid != nil {
-		oid = v.Oid.String()
+		oid = v.Oid.ToString()
 	}
 	if v.Variable != nil {
 		vtype = v.Variable.Type()
-		value = escape(v.Variable.String())
+		value = escape(v.Variable.ToString())
 	}
 	return fmt.Sprintf(`{"Oid": "%s", "Variable": {"Type": "%s", "Value": %s}}`,
 		oid, vtype, value)
@@ -287,7 +287,7 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 	if raw.Class != classContextSpecific || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid Pdu object - Class [%02x], Tag [%02x] : [%s]",
-			raw.Class, raw.Tag, toHexStr(b, " "))}
+			raw.Class, raw.Tag, ToHexStr(b, " "))}
 	}
 
 	next := raw.Bytes
@@ -318,7 +318,7 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 	if varBinds.Class != classUniversal || varBinds.Tag != tagSequence || !varBinds.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid VarBinds object - Class [%02x], Tag [%02x] : [%s]",
-			varBinds.Class, varBinds.Tag, toHexStr(next, " "))}
+			varBinds.Class, varBinds.Tag, ToHexStr(next, " "))}
 	}
 
 	next = varBinds.Bytes
@@ -388,7 +388,7 @@ func (pdu *ScopedPdu) Unmarshal(b []byte) (rest []byte, err error) {
 	if raw.Class != classUniversal || raw.Tag != tagSequence || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid ScopedPud object - Class [%02x], Tag [%02x] : [%s]",
-			raw.Class, raw.Tag, toHexStr(b, " "))}
+			raw.Class, raw.Tag, ToHexStr(b, " "))}
 	}
 
 	next := raw.Bytes
@@ -422,7 +422,7 @@ func (pdu *ScopedPdu) String() string {
 		`{"Type": "%s", "RequestId": "%d", "ErrorStatus": "%s", "ErrorIndex": "%d", `+
 			`"ContextEngineId": "%s", "ContextName": %s, "VarBinds": %s}`,
 		pdu.pduType, pdu.requestId, pdu.errorStatus, pdu.errorIndex,
-		toHexStr(pdu.ContextEngineId, ""), escape(string(pdu.ContextName)),
+		ToHexStr(pdu.ContextEngineId, ""), escape(string(pdu.ContextName)),
 		pdu.varBinds.String())
 }
 

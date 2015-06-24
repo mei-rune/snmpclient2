@@ -1,4 +1,4 @@
-package snmpgo_test
+package snmpclient2_test
 
 import (
 	"bytes"
@@ -6,25 +6,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/k-sone/snmpgo"
+	"github.com/runner-mei/snmpclient2"
 )
 
 func TestInteger(t *testing.T) {
 	expInt := int64(2147483647)
 	expStr := "2147483647"
 	expBuf := []byte{0x02, 0x04, 0x7f, 0xff, 0xff, 0xff}
-	var v snmpgo.Variable = snmpgo.NewInteger(int32(expInt))
+	var v snmpclient2.Variable = snmpclient2.NewInteger(int32(expInt))
 
-	big, err := v.BigInt()
-	if err != nil {
-		t.Errorf("Failed to call BigInt(): %v", err)
-	}
-	if expInt != big.Int64() {
-		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, big.Int64())
+	if expInt != v.Int() {
+		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, v.Int())
 	}
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual [%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual [%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -33,16 +29,16 @@ func TestInteger(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.Integer
+	var w snmpclient2.Integer
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -50,23 +46,47 @@ func TestInteger(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
+}
+
+func exceptedError1(t *testing.T, v snmpclient2.Variable) {
+	defer func() {
+		if o := recover(); nil == o {
+			t.Errorf("Failed to call BigInt()")
+		}
+	}()
+	v.Int()
+}
+
+func exceptedError2(t *testing.T, v snmpclient2.Variable) {
+	defer func() {
+		if o := recover(); nil == o {
+			t.Errorf("Failed to call BigInt()")
+		}
+	}()
+	v.Uint()
+}
+
+func exceptedError(t *testing.T, v snmpclient2.Variable) {
+	exceptedError1(t, v)
+	exceptedError2(t, v)
 }
 
 func TestOctetString(t *testing.T) {
 	expStr := "Test"
 	expBuf := []byte{0x04, 0x04, 0x54, 0x65, 0x73, 0x74}
-	var v snmpgo.Variable = snmpgo.NewOctetString([]byte(expStr))
+	var v snmpclient2.Variable = snmpclient2.NewOctetString([]byte(expStr))
 
-	_, err := v.BigInt()
-	if err == nil {
-		t.Errorf("Failed to call BigInt()")
-	}
+	//_, err := v.BigInt()
+	//if err == nil {
+	//	t.Errorf("Failed to call BigInt()")
+	//}
+	exceptedError(t, v)
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual[%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -75,16 +95,16 @@ func TestOctetString(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.OctetString
+	var w snmpclient2.OctetString
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -92,23 +112,20 @@ func TestOctetString(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
 func TestNull(t *testing.T) {
 	expStr := ""
 	expBuf := []byte{0x05, 0x00}
-	var v snmpgo.Variable = snmpgo.NewNull()
+	var v snmpclient2.Variable = snmpclient2.NewNull()
 
-	_, err := v.BigInt()
-	if err == nil {
-		t.Errorf("Failed to call BigInt()")
-	}
+	exceptedError(t, v)
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual[%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -117,16 +134,16 @@ func TestNull(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.Null
+	var w snmpclient2.Null
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -134,28 +151,25 @@ func TestNull(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
 func TestOid(t *testing.T) {
 	expStr := "1.3.6.1.2.1.1.1.0"
 	expBuf := []byte{0x06, 0x08, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x01, 0x00}
-	var v snmpgo.Variable
+	var v snmpclient2.Variable
 
-	v, err := snmpgo.NewOid(expStr)
+	v, err := snmpclient2.NewOid(expStr)
 	if err != nil {
 		t.Errorf("NewOid : %v", err)
 	}
 
-	_, err = v.BigInt()
-	if err == nil {
-		t.Errorf("Failed to call BigInt()")
-	}
+	exceptedError(t, v)
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual[%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -164,16 +178,16 @@ func TestOid(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.Oid
+	var w snmpclient2.Oid
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -181,15 +195,15 @@ func TestOid(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
 func TestOidOperation(t *testing.T) {
-	oid, _ := snmpgo.NewOid("1.2.3.4.5.6.7")
+	oid, _ := snmpclient2.NewOid("1.2.3.4.5.6.7")
 
-	oids, _ := snmpgo.NewOids([]string{"1.2.3.4", "1.2.3.4.5.6.7",
+	oids, _ := snmpclient2.NewOids([]string{"1.2.3.4", "1.2.3.4.5.6.7",
 		"1.2.3.4.5.6.7.8", "1.1.3.4", "1.3.3.4"})
 
 	if !oid.Contains(oids[0]) || !oid.Contains(oids[1]) || oid.Contains(oids[2]) ||
@@ -208,22 +222,22 @@ func TestOidOperation(t *testing.T) {
 	}
 
 	oid, _ = oid.AppendSubIds([]int{8, 9, 10})
-	if oid.String() != "1.2.3.4.5.6.7.8.9.10" {
+	if oid.ToString() != "1.2.3.4.5.6.7.8.9.10" {
 		t.Errorf("Failed to AppendSubIds()")
 	}
 }
 
 func TestNewOid(t *testing.T) {
 	expStr := ".1.3.6.1.2.1.1.1.0"
-	var v snmpgo.Variable
+	var v snmpclient2.Variable
 
-	v, err := snmpgo.NewOid(expStr)
+	v, err := snmpclient2.NewOid(expStr)
 	if err != nil {
 		t.Errorf("NewOid : %v", err)
 	}
 
-	if expStr[1:] != v.String() {
-		t.Errorf("String() - expected [%s], actual[%s]", expStr[1:], v.String())
+	if expStr[1:] != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual[%s]", expStr[1:], v.ToString())
 	}
 
 	var s []string
@@ -231,44 +245,44 @@ func TestNewOid(t *testing.T) {
 		s = append(s, strconv.Itoa(i))
 	}
 	expStr = strings.Join(s, ".")
-	v, err = snmpgo.NewOid(expStr)
+	v, err = snmpclient2.NewOid(expStr)
 	if err == nil {
 		t.Errorf("NewOid sub-identifiers size")
 	}
 
 	expStr = "1.3.6.1.2.1.-1.0"
-	v, err = snmpgo.NewOid(expStr)
+	v, err = snmpclient2.NewOid(expStr)
 	if err == nil {
 		t.Errorf("NewOid sub-identifier range")
 	}
 
 	expStr = "1.3.6.1.2.1.4294967296.0"
-	v, err = snmpgo.NewOid(expStr)
+	v, err = snmpclient2.NewOid(expStr)
 	if err == nil {
 		t.Errorf("NewOid sub-identifier range")
 	}
 
 	expStr = "3.3.6.1.2.1.1.1.0"
-	v, err = snmpgo.NewOid(expStr)
+	v, err = snmpclient2.NewOid(expStr)
 	if err == nil {
 		t.Errorf("NewOid first sub-identifier range")
 	}
 
 	expStr = "1"
-	v, err = snmpgo.NewOid(expStr)
+	v, err = snmpclient2.NewOid(expStr)
 	if err == nil {
 		t.Errorf("NewOid sub-identifiers size")
 	}
 
 	expStr = "1.40.6.1.2.1.1.1.0"
-	v, err = snmpgo.NewOid(expStr)
+	v, err = snmpclient2.NewOid(expStr)
 	if err == nil {
 		t.Errorf("NewOid first sub-identifier range")
 	}
 }
 
 func TestOids(t *testing.T) {
-	oids, _ := snmpgo.NewOids([]string{
+	oids, _ := snmpclient2.NewOids([]string{
 		"1.3.6.1.2.1.1.2.0",
 		"1.3.6.1.2.1.1.1.0",
 		"1.3.6.1.2.1.1.3.0",
@@ -276,7 +290,7 @@ func TestOids(t *testing.T) {
 		"1.3.6.1.2.1.1.1.0",
 	})
 
-	expOids, _ := snmpgo.NewOids([]string{
+	expOids, _ := snmpclient2.NewOids([]string{
 		"1.3.6.1.2.1.1",
 		"1.3.6.1.2.1.1.1.0",
 		"1.3.6.1.2.1.1.1.0",
@@ -293,7 +307,7 @@ func TestOids(t *testing.T) {
 		}
 	}
 
-	expOids, _ = snmpgo.NewOids([]string{
+	expOids, _ = snmpclient2.NewOids([]string{
 		"1.3.6.1.2.1.1",
 		"1.3.6.1.2.1.1.1.0",
 		"1.3.6.1.2.1.1.2.0",
@@ -309,7 +323,7 @@ func TestOids(t *testing.T) {
 		}
 	}
 
-	expOids, _ = snmpgo.NewOids([]string{
+	expOids, _ = snmpclient2.NewOids([]string{
 		"1.3.6.1.2.1.1",
 	})
 	oids = oids.Sort().UniqBase()
@@ -327,18 +341,14 @@ func TestIpaddress(t *testing.T) {
 	expStr := "192.168.1.1"
 	expInt := int64(3232235777)
 	expBuf := []byte{0x40, 0x04, 0xc0, 0xa8, 0x01, 0x01}
-	var v snmpgo.Variable = snmpgo.NewIpaddress(0xc0, 0xa8, 0x01, 0x01)
+	var v snmpclient2.Variable = snmpclient2.NewIpaddress(0xc0, 0xa8, 0x01, 0x01)
 
-	big, err := v.BigInt()
-	if err != nil {
-		t.Errorf("Failed to call BigInt(): %v", err)
-	}
-	if expInt != big.Int64() {
-		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, big.Int64())
+	if expInt != v.Int() {
+		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, v.Int())
 	}
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual[%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -347,16 +357,16 @@ func TestIpaddress(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.Ipaddress
+	var w snmpclient2.Ipaddress
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -364,27 +374,23 @@ func TestIpaddress(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
 func TestCounter32(t *testing.T) {
-	expInt := int64(4294967295)
+	expInt := uint64(4294967295)
 	expStr := "4294967295"
 	expBuf := []byte{0x41, 0x05, 0x00, 0xff, 0xff, 0xff, 0xff}
-	var v snmpgo.Variable = snmpgo.NewCounter32(uint32(expInt))
+	var v snmpclient2.Variable = snmpclient2.NewCounter32(uint32(expInt))
 
-	big, err := v.BigInt()
-	if err != nil {
-		t.Errorf("Failed to call BigInt(): %v", err)
-	}
-	if expInt != big.Int64() {
-		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, big.Int64())
+	if expInt != v.Uint() {
+		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, v.Uint())
 	}
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual [%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual [%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -393,16 +399,16 @@ func TestCounter32(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.Counter32
+	var w snmpclient2.Counter32
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -410,27 +416,23 @@ func TestCounter32(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
 func TestGauge32(t *testing.T) {
-	expInt := int64(4294967295)
+	expInt := uint64(4294967295)
 	expStr := "4294967295"
 	expBuf := []byte{0x42, 0x05, 0x00, 0xff, 0xff, 0xff, 0xff}
-	var v snmpgo.Variable = snmpgo.NewGauge32(uint32(expInt))
+	var v snmpclient2.Variable = snmpclient2.NewGauge32(uint32(expInt))
 
-	big, err := v.BigInt()
-	if err != nil {
-		t.Errorf("Failed to call BigInt(): %v", err)
-	}
-	if expInt != big.Int64() {
-		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, big.Int64())
+	if expInt != v.Uint() {
+		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, v.Uint())
 	}
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual [%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual [%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -439,16 +441,16 @@ func TestGauge32(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.Gauge32
+	var w snmpclient2.Gauge32
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -456,8 +458,8 @@ func TestGauge32(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
@@ -465,18 +467,14 @@ func TestTimeTicks(t *testing.T) {
 	expInt := int64(4294967295)
 	expStr := "4294967295"
 	expBuf := []byte{0x43, 0x05, 0x00, 0xff, 0xff, 0xff, 0xff}
-	var v snmpgo.Variable = snmpgo.NewTimeTicks(uint32(expInt))
+	var v snmpclient2.Variable = snmpclient2.NewTimeTicks(uint32(expInt))
 
-	big, err := v.BigInt()
-	if err != nil {
-		t.Errorf("Failed to call BigInt(): %v", err)
-	}
-	if expInt != big.Int64() {
-		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, big.Int64())
+	if expInt != v.Int() {
+		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, v.Int())
 	}
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual [%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual [%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -485,16 +483,16 @@ func TestTimeTicks(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.TimeTicks
+	var w snmpclient2.TimeTicks
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -502,23 +500,20 @@ func TestTimeTicks(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
 func TestOpaque(t *testing.T) {
 	expStr := "54:65:73:74"
 	expBuf := []byte{0x44, 0x04, 0x54, 0x65, 0x73, 0x74}
-	var v snmpgo.Variable = snmpgo.NewOpaque(expBuf[2:])
+	var v snmpclient2.Variable = snmpclient2.NewOpaque(expBuf[2:])
 
-	_, err := v.BigInt()
-	if err == nil {
-		t.Errorf("Failed to call BigInt()")
-	}
+	exceptedError(t, v)
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual[%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -527,16 +522,16 @@ func TestOpaque(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.Opaque
+	var w snmpclient2.Opaque
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -544,8 +539,8 @@ func TestOpaque(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
@@ -553,18 +548,14 @@ func TestCounter64(t *testing.T) {
 	expInt := uint64(18446744073709551615)
 	expStr := "18446744073709551615"
 	expBuf := []byte{0x46, 0x09, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
-	var v snmpgo.Variable = snmpgo.NewCounter64(expInt)
+	var v snmpclient2.Variable = snmpclient2.NewCounter64(expInt)
 
-	big, err := v.BigInt()
-	if err != nil {
-		t.Errorf("Failed to call BigInt(): %v", err)
-	}
-	if expInt != big.Uint64() {
-		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, big.Int64())
+	if expInt != v.Uint() {
+		t.Errorf("BigInt() - expected [%d], actual [%d]", expInt, v.Uint())
 	}
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual [%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual [%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -573,16 +564,16 @@ func TestCounter64(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.Counter64
+	var w snmpclient2.Counter64
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -590,23 +581,20 @@ func TestCounter64(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
 func TestNoSucheObject(t *testing.T) {
 	expStr := ""
 	expBuf := []byte{0x80, 0x00}
-	var v snmpgo.Variable = snmpgo.NewNoSucheObject()
+	var v snmpclient2.Variable = snmpclient2.NewNoSucheObject()
 
-	_, err := v.BigInt()
-	if err == nil {
-		t.Errorf("Failed to call BigInt()")
-	}
+	exceptedError(t, v)
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual[%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -615,16 +603,16 @@ func TestNoSucheObject(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.NoSucheObject
+	var w snmpclient2.NoSucheObject
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -632,23 +620,20 @@ func TestNoSucheObject(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
 func TestNoSucheInstance(t *testing.T) {
 	expStr := ""
 	expBuf := []byte{0x81, 0x00}
-	var v snmpgo.Variable = snmpgo.NewNoSucheInstance()
+	var v snmpclient2.Variable = snmpclient2.NewNoSucheInstance()
 
-	_, err := v.BigInt()
-	if err == nil {
-		t.Errorf("Failed to call BigInt()")
-	}
+	exceptedError(t, v)
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual[%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -657,16 +642,16 @@ func TestNoSucheInstance(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.NoSucheInstance
+	var w snmpclient2.NoSucheInstance
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -674,23 +659,20 @@ func TestNoSucheInstance(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }
 
 func TestEndOfMibView(t *testing.T) {
 	expStr := ""
 	expBuf := []byte{0x82, 0x00}
-	var v snmpgo.Variable = snmpgo.NewEndOfMibView()
+	var v snmpclient2.Variable = snmpclient2.NewEndOfMibView()
 
-	_, err := v.BigInt()
-	if err == nil {
-		t.Errorf("Failed to call BigInt()")
-	}
+	exceptedError(t, v)
 
-	if expStr != v.String() {
-		t.Errorf("String() - expected [%s], actual[%s]", expStr, v.String())
+	if expStr != v.ToString() {
+		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
 	}
 
 	buf, err := v.Marshal()
@@ -699,16 +681,16 @@ func TestEndOfMibView(t *testing.T) {
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
-			snmpgo.ToHexStr(expBuf, " "), snmpgo.ToHexStr(buf, " "))
+			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(buf, " "))
 	}
 
-	var w snmpgo.EndOfMibView
+	var w snmpclient2.EndOfMibView
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
 	buf = append(buf, 0x00)
@@ -716,7 +698,7 @@ func TestEndOfMibView(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.String() {
-		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.String())
+	if expStr != w.ToString() {
+		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }

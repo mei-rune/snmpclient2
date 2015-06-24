@@ -1,4 +1,4 @@
-package snmpgo
+package snmpclient2
 
 import (
 	"fmt"
@@ -93,14 +93,14 @@ func (a *SNMPArguments) validate() error {
 			}
 		}
 		if a.SecurityEngineId != "" {
-			a.SecurityEngineId = stripHexPrefix(a.SecurityEngineId)
+			a.SecurityEngineId = StripHexPrefix(a.SecurityEngineId)
 			_, err := engineIdToBytes(a.SecurityEngineId)
 			if err != nil {
 				return err
 			}
 		}
 		if a.ContextEngineId != "" {
-			a.ContextEngineId = stripHexPrefix(a.ContextEngineId)
+			a.ContextEngineId = StripHexPrefix(a.ContextEngineId)
 			_, err := engineIdToBytes(a.ContextEngineId)
 			if err != nil {
 				return err
@@ -131,7 +131,7 @@ func (s *SNMP) Open() (err error) {
 		conn, e := net.DialTimeout(s.args.Network, s.args.Address, s.args.Timeout)
 		if e == nil {
 			s.conn = conn
-			s.mp = newMessageProcessing(s.args.Version)
+			s.mp = NewMessageProcessing(s.args.Version)
 		}
 		return e
 	})
@@ -312,7 +312,7 @@ func (s *SNMP) sendPdu(pdu Pdu) (result Pdu, err error) {
 		return
 	}
 
-	var sendMsg message
+	var sendMsg Message
 	sendMsg, err = s.mp.PrepareOutgoingMessage(s, pdu)
 	if err != nil {
 		return
@@ -353,7 +353,7 @@ func (s *SNMP) sendPdu(pdu Pdu) (result Pdu, err error) {
 func (s *SNMP) checkPdu(pdu Pdu) (err error) {
 	varBinds := pdu.VarBinds()
 	if s.args.Version == V3 && pdu.PduType() == Report && len(varBinds) > 0 {
-		oid := varBinds[0].Oid.String()
+		oid := varBinds[0].Oid.ToString()
 		rep := reportStatusOid(oid)
 		err = ResponseError{
 			Message: fmt.Sprintf("Received a report from the agent - %s(%s)", rep, oid),

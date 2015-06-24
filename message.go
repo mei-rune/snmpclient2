@@ -1,11 +1,21 @@
-package snmpgo
+package snmpclient2
 
 import (
 	"encoding/asn1"
 	"fmt"
 )
 
-type message interface {
+//  snmp messsage v1 or v2
+// +----------------------------------+
+// |  version  |  community   |  pdu  |
+// +----------------------------------+
+
+//  snmp messsage v3
+// +--------------------------------------------------------------------------------------------------------------------------------+
+// |  version  |  request_id   |  max_size  |  flags  |  security_model  |  security_params  |  context_engine_id  |  context_name  |
+// +--------------------------------------------------------------------------------------------------------------------------------+
+
+type Message interface {
 	Version() SNMPVersion
 	Pdu() Pdu
 	PduBytes() []byte
@@ -15,30 +25,30 @@ type message interface {
 	String() string
 }
 
-type messageV1 struct {
+type MessageV1 struct {
 	version   SNMPVersion
 	Community []byte
 	pduBytes  []byte
 	pdu       Pdu
 }
 
-func (msg *messageV1) Version() SNMPVersion {
+func (msg *MessageV1) Version() SNMPVersion {
 	return msg.version
 }
 
-func (msg *messageV1) Pdu() Pdu {
+func (msg *MessageV1) Pdu() Pdu {
 	return msg.pdu
 }
 
-func (msg *messageV1) PduBytes() []byte {
+func (msg *MessageV1) PduBytes() []byte {
 	return msg.pduBytes
 }
 
-func (msg *messageV1) SetPduBytes(b []byte) {
+func (msg *MessageV1) SetPduBytes(b []byte) {
 	msg.pduBytes = b
 }
 
-func (msg *messageV1) Marshal() (b []byte, err error) {
+func (msg *MessageV1) Marshal() (b []byte, err error) {
 	var buf []byte
 	raw := asn1.RawValue{Class: classUniversal, Tag: tagSequence, IsCompound: true}
 
@@ -58,7 +68,7 @@ func (msg *messageV1) Marshal() (b []byte, err error) {
 	return asn1.Marshal(raw)
 }
 
-func (msg *messageV1) Unmarshal(b []byte) (rest []byte, err error) {
+func (msg *MessageV1) Unmarshal(b []byte) (rest []byte, err error) {
 	var raw asn1.RawValue
 	rest, err = asn1.Unmarshal(b, &raw)
 	if err != nil {
@@ -66,8 +76,8 @@ func (msg *messageV1) Unmarshal(b []byte) (rest []byte, err error) {
 	}
 	if raw.Class != classUniversal || raw.Tag != tagSequence || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
-			"Invalid messageV1 object - Class [%02x], Tag [%02x] : [%s]",
-			raw.Class, raw.Tag, toHexStr(b, " "))}
+			"Invalid MessageV1 object - Class [%02x], Tag [%02x] : [%s]",
+			raw.Class, raw.Tag, ToHexStr(b, " "))}
 	}
 
 	next := raw.Bytes
@@ -90,7 +100,7 @@ func (msg *messageV1) Unmarshal(b []byte) (rest []byte, err error) {
 	return
 }
 
-func (msg *messageV1) String() string {
+func (msg *MessageV1) String() string {
 	return fmt.Sprintf(
 		`{"Version": "%s", "Community": "%s", "Pdu": %s}`,
 		msg.version, msg.Community, msg.pdu.String())
@@ -232,7 +242,7 @@ func (sec *securityParameterV3) Unmarshal(b []byte) (rest []byte, err error) {
 	if raw.Class != classUniversal || raw.Tag != tagOctetString || raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid SecurityParameter object - Class [%02x], Tag [%02x] : [%s]",
-			raw.Class, raw.Tag, toHexStr(b, " "))}
+			raw.Class, raw.Tag, ToHexStr(b, " "))}
 	}
 
 	_, err = asn1.Unmarshal(raw.Bytes, sec)
@@ -243,17 +253,21 @@ func (sec *securityParameterV3) String() string {
 	return fmt.Sprintf(
 		`{"AuthEngineId": "%s", "AuthEngineBoots": "%d", "AuthEngineTime": "%d", `+
 			`"UserName": "%s", "AuthParameter": "%s", "PrivParameter": "%s"}`,
-		toHexStr(sec.AuthEngineId, ""), sec.AuthEngineBoots, sec.AuthEngineTime, sec.UserName,
-		toHexStr(sec.AuthParameter, ":"), toHexStr(sec.PrivParameter, ":"))
+		ToHexStr(sec.AuthEngineId, ""), sec.AuthEngineBoots, sec.AuthEngineTime, sec.UserName,
+		ToHexStr(sec.AuthParameter, ":"), ToHexStr(sec.PrivParameter, ":"))
 }
 
-type messageV3 struct {
+// snmp messsage v3
+// +--------------------------------------------------------------------------------------------------------------------------------+
+// |  version  |  request_id   |  max_size  |  flags  |  security_model  |  security_params  |  context_engine_id  |  context_name  |
+// +--------------------------------------------------------------------------------------------------------------------------------+
+type MessageV3 struct {
 	globalDataV3
 	securityParameterV3
-	messageV1
+	MessageV1
 }
 
-func (msg *messageV3) Marshal() (b []byte, err error) {
+func (msg *MessageV3) Marshal() (b []byte, err error) {
 	var buf []byte
 	raw := asn1.RawValue{Class: classUniversal, Tag: tagSequence, IsCompound: true}
 
@@ -279,7 +293,7 @@ func (msg *messageV3) Marshal() (b []byte, err error) {
 	return asn1.Marshal(raw)
 }
 
-func (msg *messageV3) Unmarshal(b []byte) (rest []byte, err error) {
+func (msg *MessageV3) Unmarshal(b []byte) (rest []byte, err error) {
 	var raw asn1.RawValue
 	rest, err = asn1.Unmarshal(b, &raw)
 	if err != nil {
@@ -287,8 +301,8 @@ func (msg *messageV3) Unmarshal(b []byte) (rest []byte, err error) {
 	}
 	if raw.Class != classUniversal || raw.Tag != tagSequence || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
-			"Invalid messageV3 object - Class [%02x], Tag [%02x] : [%s]",
-			raw.FullBytes[0], tagSequence, toHexStr(b, " "))}
+			"Invalid MessageV3 object - Class [%02x], Tag [%02x] : [%s]",
+			raw.FullBytes[0], tagSequence, ToHexStr(b, " "))}
 	}
 
 	next := raw.Bytes
@@ -314,15 +328,15 @@ func (msg *messageV3) Unmarshal(b []byte) (rest []byte, err error) {
 	return
 }
 
-func (msg *messageV3) String() string {
+func (msg *MessageV3) String() string {
 	return fmt.Sprintf(
 		`{"Version": "%s", "GlobalData": %s, "SecurityParameter": %s, "Pdu": %s}`,
 		msg.version, msg.globalDataV3.String(), msg.securityParameterV3.String(),
 		msg.pdu.String())
 }
 
-func newMessage(ver SNMPVersion, pdu Pdu) (msg message) {
-	m := messageV1{
+func NewMessage(ver SNMPVersion, pdu Pdu) (msg Message) {
+	m := MessageV1{
 		version: ver,
 		pdu:     pdu,
 	}
@@ -330,8 +344,8 @@ func newMessage(ver SNMPVersion, pdu Pdu) (msg message) {
 	case V1, V2c:
 		msg = &m
 	case V3:
-		msg = &messageV3{
-			messageV1:    m,
+		msg = &MessageV3{
+			MessageV1:    m,
 			globalDataV3: globalDataV3{MessageFlags: []byte{0}},
 		}
 	}
@@ -339,40 +353,40 @@ func newMessage(ver SNMPVersion, pdu Pdu) (msg message) {
 }
 
 type messageProcessing interface {
-	Security() security
-	PrepareOutgoingMessage(*SNMP, Pdu) (message, error)
-	PrepareDataElements(*SNMP, message, []byte) (Pdu, error)
+	Security() Security
+	PrepareOutgoingMessage(*SNMP, Pdu) (Message, error)
+	PrepareDataElements(*SNMP, Message, []byte) (Pdu, error)
 }
 
 type messageProcessingV1 struct {
-	security security
+	security Security
 }
 
-func (mp *messageProcessingV1) Security() security {
+func (mp *messageProcessingV1) Security() Security {
 	return mp.security
 }
 
 func (mp *messageProcessingV1) PrepareOutgoingMessage(
-	snmp *SNMP, pdu Pdu) (msg message, err error) {
+	snmp *SNMP, pdu Pdu) (msg Message, err error) {
 
 	pdu.SetRequestId(genRequestId())
-	msg = newMessage(snmp.args.Version, pdu)
+	msg = NewMessage(snmp.args.Version, pdu)
 
 	err = mp.security.GenerateRequestMessage(snmp, msg)
 	return
 }
 
 func (mp *messageProcessingV1) PrepareDataElements(
-	snmp *SNMP, sendMsg message, b []byte) (pdu Pdu, err error) {
+	snmp *SNMP, sendMsg Message, b []byte) (pdu Pdu, err error) {
 
 	pdu = &PduV1{}
-	recvMsg := newMessage(snmp.args.Version, pdu)
+	recvMsg := NewMessage(snmp.args.Version, pdu)
 	_, err = recvMsg.Unmarshal(b)
 	if err != nil {
 		return nil, ResponseError{
 			Cause:   err,
 			Message: "Failed to Unmarshal message",
-			Detail:  fmt.Sprintf("message Bytes - [%s]", toHexStr(b, " ")),
+			Detail:  fmt.Sprintf("message Bytes - [%s]", ToHexStr(b, " ")),
 		}
 	}
 
@@ -407,20 +421,20 @@ func (mp *messageProcessingV1) PrepareDataElements(
 }
 
 type messageProcessingV3 struct {
-	security security
+	security Security
 }
 
-func (mp *messageProcessingV3) Security() security {
+func (mp *messageProcessingV3) Security() Security {
 	return mp.security
 }
 
 func (mp *messageProcessingV3) PrepareOutgoingMessage(
-	snmp *SNMP, pdu Pdu) (msg message, err error) {
+	snmp *SNMP, pdu Pdu) (msg Message, err error) {
 
 	pdu.SetRequestId(genRequestId())
-	msg = newMessage(snmp.args.Version, pdu)
+	msg = NewMessage(snmp.args.Version, pdu)
 
-	m := msg.(*messageV3)
+	m := msg.(*MessageV3)
 	m.MessageId = genMessageId()
 	m.MessageMaxSize = snmp.args.MessageMaxSize
 	m.SecurityModel = securityUsm
@@ -437,21 +451,21 @@ func (mp *messageProcessingV3) PrepareOutgoingMessage(
 }
 
 func (mp *messageProcessingV3) PrepareDataElements(
-	snmp *SNMP, sendMsg message, b []byte) (pdu Pdu, err error) {
+	snmp *SNMP, sendMsg Message, b []byte) (pdu Pdu, err error) {
 
 	pdu = &ScopedPdu{}
-	recvMsg := newMessage(snmp.args.Version, pdu)
+	recvMsg := NewMessage(snmp.args.Version, pdu)
 	_, err = recvMsg.Unmarshal(b)
 	if err != nil {
 		return nil, ResponseError{
 			Cause:   err,
 			Message: "Failed to Unmarshal message",
-			Detail:  fmt.Sprintf("message Bytes - [%s]", toHexStr(b, " ")),
+			Detail:  fmt.Sprintf("message Bytes - [%s]", ToHexStr(b, " ")),
 		}
 	}
 
-	sm := sendMsg.(*messageV3)
-	rm := recvMsg.(*messageV3)
+	sm := sendMsg.(*MessageV3)
+	rm := recvMsg.(*MessageV3)
 	if sm.Version() != rm.Version() {
 		return nil, ResponseError{
 			Message: fmt.Sprintf(
@@ -500,12 +514,12 @@ func (mp *messageProcessingV3) PrepareDataElements(
 	return
 }
 
-func newMessageProcessing(ver SNMPVersion) (mp messageProcessing) {
+func NewMessageProcessing(ver SNMPVersion) (mp messageProcessing) {
 	switch ver {
 	case V1, V2c:
 		mp = &messageProcessingV1{security: &community{}}
 	case V3:
-		mp = &messageProcessingV3{security: &usm{}}
+		mp = &messageProcessingV3{security: &USM{}}
 	}
 	return
 }

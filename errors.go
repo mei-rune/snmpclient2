@@ -1,4 +1,4 @@
-package snmpgo
+package snmpclient2
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package snmpgo
+package snmpclient2
 
 import (
 	"bytes"
@@ -89,11 +89,11 @@ func engineIdToBytes(engineId string) ([]byte, error) {
 
 var hexPrefix *regexp.Regexp = regexp.MustCompile(`^0[xX]`)
 
-func stripHexPrefix(s string) string {
+func StripHexPrefix(s string) string {
 	return hexPrefix.ReplaceAllString(s, "")
 }
 
-func toHexStr(a []byte, sep string) string {
+func ToHexStr(a []byte, sep string) string {
 	s := make([]string, len(a))
 	for i, b := range a {
 		s[i] = fmt.Sprintf("%02x", b)
@@ -121,3 +121,10 @@ func padding(b []byte, size int) []byte {
 	}
 	return b
 }
+
+// For snmpgo testing
+func ArgsValidate(args *SNMPArguments) error { return args.validate() }
+func SnmpCheckPdu(snmp *SNMP, pdu Pdu) error { return snmp.checkPdu(pdu) }
+
+func NewCommunity() Security { return &community{} }
+func NewUsm() Security       { return &USM{} }
