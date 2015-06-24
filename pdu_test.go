@@ -167,17 +167,17 @@ func TestVarBinds(t *testing.T) {
 func TestNewPdu(t *testing.T) {
 	pdu := snmpclient2.NewPdu(snmpclient2.V1, snmpclient2.GetRequest)
 	if _, ok := pdu.(*snmpclient2.PduV1); !ok {
-		t.Errorf("NewPdu() Invalid Pdu")
+		t.Errorf("NewPdu() Invalid PDU")
 	}
 
 	pdu = snmpclient2.NewPdu(snmpclient2.V2c, snmpclient2.GetRequest)
 	if _, ok := pdu.(*snmpclient2.PduV1); !ok {
-		t.Errorf("NewPdu() Invalid Pdu")
+		t.Errorf("NewPdu() Invalid PDU")
 	}
 
 	pdu = snmpclient2.NewPdu(snmpclient2.V3, snmpclient2.GetRequest)
 	if _, ok := pdu.(*snmpclient2.ScopedPdu); !ok {
-		t.Errorf("NewPdu() Invalid Pdu")
+		t.Errorf("NewPdu() Invalid PDU")
 	}
 }
 

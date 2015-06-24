@@ -29,7 +29,7 @@ func TestMessageV1(t *testing.T) {
 	}
 
 	expStr := `{"Version": "2c", "Community": "MyCommunity", ` +
-		`"Pdu": {"Type": "GetRequest", "RequestId": "0", "ErrorStatus": ` +
+		`"PDU": {"Type": "GetRequest", "RequestId": "0", "ErrorStatus": ` +
 		`"NoError", "ErrorIndex": "0", "VarBinds": []}}`
 	m := snmpclient2.NewMessage(snmpclient2.V2c, pdu)
 	rest, err := m.Unmarshal(buf)
@@ -82,7 +82,7 @@ func TestMessageV3(t *testing.T) {
 		`"MessageFlags": "apr", "SecurityModel": "USM"}, "SecurityParameter": ` +
 		`{"AuthEngineId": "8001020304050607", "AuthEngineBoots": "456", ` +
 		`"AuthEngineTime": "654", "UserName": "User", "AuthParameter": "aa:bb:cc", ` +
-		`"PrivParameter": "dd:ee:ff"}, "Pdu": {"Type": "GetRequest", "RequestId": "0", ` +
+		`"PrivParameter": "dd:ee:ff"}, "PDU": {"Type": "GetRequest", "RequestId": "0", ` +
 		`"ErrorStatus": "NoError", "ErrorIndex": "0", "ContextEngineId": "", ` +
 		`"ContextName": "", "VarBinds": []}}`
 	m := snmpclient2.NewMessage(snmpclient2.V3, pdu)

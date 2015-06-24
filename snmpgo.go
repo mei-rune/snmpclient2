@@ -158,7 +158,7 @@ func (s *SNMP) Close() {
 	}
 }
 
-func (s *SNMP) GetRequest(oids Oids) (result Pdu, err error) {
+func (s *SNMP) GetRequest(oids Oids) (result PDU, err error) {
 	pdu := NewPduWithOids(s.args.Version, GetRequest, oids)
 
 	retry(int(s.args.Retries), func() error {
@@ -168,7 +168,7 @@ func (s *SNMP) GetRequest(oids Oids) (result Pdu, err error) {
 	return
 }
 
-func (s *SNMP) GetNextRequest(oids Oids) (result Pdu, err error) {
+func (s *SNMP) GetNextRequest(oids Oids) (result PDU, err error) {
 	pdu := NewPduWithOids(s.args.Version, GetNextRequest, oids)
 
 	retry(int(s.args.Retries), func() error {
@@ -178,7 +178,7 @@ func (s *SNMP) GetNextRequest(oids Oids) (result Pdu, err error) {
 	return
 }
 
-func (s *SNMP) GetBulkRequest(oids Oids, nonRepeaters, maxRepetitions int) (result Pdu, err error) {
+func (s *SNMP) GetBulkRequest(oids Oids, nonRepeaters, maxRepetitions int) (result PDU, err error) {
 
 	if s.args.Version < V2c {
 		return nil, ArgumentError{
@@ -214,7 +214,7 @@ func (s *SNMP) GetBulkRequest(oids Oids, nonRepeaters, maxRepetitions int) (resu
 // This method inquire about OID subtrees by repeatedly using GetBulkRequest.
 // Returned PDU contains the varbind list of all subtrees.
 // however, if the ErrorStatus of PDU is not the NoError, return only the last query result.
-func (s *SNMP) GetBulkWalk(oids Oids, nonRepeaters, maxRepetitions int) (result Pdu, err error) {
+func (s *SNMP) GetBulkWalk(oids Oids, nonRepeaters, maxRepetitions int) (result PDU, err error) {
 	var nonRepBinds, resBinds VarBinds
 
 	oids = append(oids[:nonRepeaters], oids[nonRepeaters:].Sort().UniqBase()...)
@@ -307,7 +307,7 @@ func (s *SNMP) v2trap(pduType PduType, varBinds VarBinds) (err error) {
 	return
 }
 
-func (s *SNMP) sendPdu(pdu Pdu) (result Pdu, err error) {
+func (s *SNMP) sendPdu(pdu PDU) (result PDU, err error) {
 	if err = s.Open(); err != nil {
 		return
 	}
@@ -350,14 +350,14 @@ func (s *SNMP) sendPdu(pdu Pdu) (result Pdu, err error) {
 	return
 }
 
-func (s *SNMP) checkPdu(pdu Pdu) (err error) {
+func (s *SNMP) checkPdu(pdu PDU) (err error) {
 	varBinds := pdu.VarBinds()
 	if s.args.Version == V3 && pdu.PduType() == Report && len(varBinds) > 0 {
 		oid := varBinds[0].Oid.ToString()
 		rep := reportStatusOid(oid)
 		err = ResponseError{
 			Message: fmt.Sprintf("Received a report from the agent - %s(%s)", rep, oid),
-			Detail:  fmt.Sprintf("Pdu - %s", pdu),
+			Detail:  fmt.Sprintf("PDU - %s", pdu),
 		}
 		// perhaps the agent has rebooted after the previous communication
 		if rep == usmStatsNotInTimeWindows {

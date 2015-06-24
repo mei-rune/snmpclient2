@@ -165,7 +165,7 @@ func (v sortableVarBinds) Less(i, j int) bool {
 }
 
 // The protocol data unit of SNMP
-type Pdu interface {
+type PDU interface {
 	PduType() PduType
 	RequestId() int
 	SetRequestId(int)
@@ -286,7 +286,7 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 	}
 	if raw.Class != classContextSpecific || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
-			"Invalid Pdu object - Class [%02x], Tag [%02x] : [%s]",
+			"Invalid PDU object - Class [%02x], Tag [%02x] : [%s]",
 			raw.Class, raw.Tag, ToHexStr(b, " "))}
 	}
 
@@ -426,7 +426,7 @@ func (pdu *ScopedPdu) String() string {
 		pdu.varBinds.String())
 }
 
-func NewPdu(ver SNMPVersion, t PduType) (pdu Pdu) {
+func NewPdu(ver SNMPVersion, t PduType) (pdu PDU) {
 	p := PduV1{pduType: t}
 	switch ver {
 	case V1, V2c:
@@ -437,7 +437,7 @@ func NewPdu(ver SNMPVersion, t PduType) (pdu Pdu) {
 	return
 }
 
-func NewPduWithOids(ver SNMPVersion, t PduType, oids Oids) (pdu Pdu) {
+func NewPduWithOids(ver SNMPVersion, t PduType, oids Oids) (pdu PDU) {
 	pdu = NewPdu(ver, t)
 	for _, o := range oids {
 		pdu.AppendVarBind(o, NewNull())
@@ -445,7 +445,7 @@ func NewPduWithOids(ver SNMPVersion, t PduType, oids Oids) (pdu Pdu) {
 	return
 }
 
-func NewPduWithVarBinds(ver SNMPVersion, t PduType, varBinds VarBinds) (pdu Pdu) {
+func NewPduWithVarBinds(ver SNMPVersion, t PduType, varBinds VarBinds) (pdu PDU) {
 	pdu = NewPdu(ver, t)
 	for _, v := range varBinds {
 		pdu.AppendVarBind(v.Oid, v.Variable)

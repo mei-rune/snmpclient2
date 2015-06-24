@@ -29,7 +29,7 @@ func (c *community) GenerateRequestMessage(snmp *SNMP, sendMsg Message) (err err
 	m := sendMsg.(*MessageV1)
 	m.Community = []byte(snmp.args.Community)
 
-	b, err := m.Pdu().Marshal()
+	b, err := m.PDU().Marshal()
 	if err != nil {
 		return
 	}
@@ -51,12 +51,12 @@ func (c *community) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg Message)
 		}
 	}
 
-	_, err = rm.Pdu().Unmarshal(rm.PduBytes())
+	_, err = rm.PDU().Unmarshal(rm.PduBytes())
 	if err != nil {
 		return ResponseError{
 			Cause:   err,
-			Message: "Failed to Unmarshal Pdu",
-			Detail:  fmt.Sprintf("Pdu Bytes - [%s]", ToHexStr(rm.PduBytes(), " ")),
+			Message: "Failed to Unmarshal PDU",
+			Detail:  fmt.Sprintf("PDU Bytes - [%s]", ToHexStr(rm.PduBytes(), " ")),
 		}
 	}
 	return
@@ -118,8 +118,8 @@ func (u *USM) GenerateRequestMessage(snmp *SNMP, sendMsg Message) (err error) {
 		m.AuthEngineTime = u.AuthEngineTime
 	}
 
-	// setup Pdu
-	p := sendMsg.Pdu().(*ScopedPdu)
+	// setup PDU
+	p := sendMsg.PDU().(*ScopedPdu)
 
 	if snmp.args.ContextEngineId != "" {
 		p.ContextEngineId, _ = engineIdToBytes(snmp.args.ContextEngineId)
@@ -137,7 +137,7 @@ func (u *USM) GenerateRequestMessage(snmp *SNMP, sendMsg Message) (err error) {
 	m.SetPduBytes(pduBytes)
 
 	if m.Authentication() {
-		// encrypt Pdu
+		// encrypt PDU
 		if m.Privacy() {
 			err = encrypt(m, snmp.args.PrivProtocol, u.PrivKey)
 			if err != nil {
@@ -214,7 +214,7 @@ func (u *USM) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg Message) (err 
 			}
 		}
 
-		// decrypt Pdu
+		// decrypt PDU
 		if rm.Privacy() {
 			e := decrypt(rm, snmp.args.PrivProtocol, u.PrivKey, rm.PrivParameter)
 			if e != nil {
@@ -248,19 +248,19 @@ func (u *USM) ProcessIncomingMessage(snmp *SNMP, sendMsg, recvMsg Message) (err 
 		u.DiscoveryStatus = noSynchronized
 	}
 
-	_, err = rm.Pdu().Unmarshal(rm.PduBytes())
+	_, err = rm.PDU().Unmarshal(rm.PduBytes())
 	if err != nil {
 		var note string
 		if rm.Privacy() {
-			note = " (probably Pdu was unable to decrypt)"
+			note = " (probably PDU was unable to decrypt)"
 		}
 		return ResponseError{
 			Cause:   err,
-			Message: fmt.Sprintf("Failed to Unmarshal Pdu%s", note),
-			Detail:  fmt.Sprintf("Pdu Bytes - [%s]", ToHexStr(rm.PduBytes(), " ")),
+			Message: fmt.Sprintf("Failed to Unmarshal PDU%s", note),
+			Detail:  fmt.Sprintf("PDU Bytes - [%s]", ToHexStr(rm.PduBytes(), " ")),
 		}
 	}
-	p := rm.Pdu().(*ScopedPdu)
+	p := rm.PDU().(*ScopedPdu)
 
 	if p.PduType() == GetResponse {
 		var cxtId []byte
@@ -299,7 +299,7 @@ func (u *USM) Discover(snmp *SNMP) (err error) {
 	}
 
 	if u.DiscoveryStatus == noDiscovered {
-		// Send an empty Pdu with the NoAuthNoPriv
+		// Send an empty PDU with the NoAuthNoPriv
 		orgSecLevel := snmp.args.SecurityLevel
 		snmp.args.SecurityLevel = NoAuthNoPriv
 
@@ -313,7 +313,7 @@ func (u *USM) Discover(snmp *SNMP) (err error) {
 	}
 
 	if u.DiscoveryStatus == noSynchronized && snmp.args.SecurityLevel > NoAuthNoPriv {
-		// Send an empty Pdu
+		// Send an empty PDU
 		pdu := NewPdu(snmp.args.Version, GetRequest)
 		_, err = snmp.sendPdu(pdu)
 		if err != nil {
@@ -430,7 +430,7 @@ func decrypt(msg *MessageV3, proto PrivProtocol, key, privParam []byte) (err err
 	}
 	if raw.Class != classUniversal || raw.Tag != tagOctetString || raw.IsCompound {
 		return asn1.StructuralError{fmt.Sprintf(
-			"Invalid encrypted Pdu object - Class [%02x], Tag [%02x] : [%s]",
+			"Invalid encrypted PDU object - Class [%02x], Tag [%02x] : [%s]",
 			raw.Class, raw.Tag, ToHexStr(msg.PduBytes(), " "))}
 	}
 

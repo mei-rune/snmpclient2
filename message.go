@@ -17,7 +17,7 @@ import (
 
 type Message interface {
 	Version() SNMPVersion
-	Pdu() Pdu
+	PDU() PDU
 	PduBytes() []byte
 	SetPduBytes([]byte)
 	Marshal() ([]byte, error)
@@ -29,14 +29,14 @@ type MessageV1 struct {
 	version   SNMPVersion
 	Community []byte
 	pduBytes  []byte
-	pdu       Pdu
+	pdu       PDU
 }
 
 func (msg *MessageV1) Version() SNMPVersion {
 	return msg.version
 }
 
-func (msg *MessageV1) Pdu() Pdu {
+func (msg *MessageV1) PDU() PDU {
 	return msg.pdu
 }
 
@@ -102,7 +102,7 @@ func (msg *MessageV1) Unmarshal(b []byte) (rest []byte, err error) {
 
 func (msg *MessageV1) String() string {
 	return fmt.Sprintf(
-		`{"Version": "%s", "Community": "%s", "Pdu": %s}`,
+		`{"Version": "%s", "Community": "%s", "PDU": %s}`,
 		msg.version, msg.Community, msg.pdu.String())
 }
 
@@ -330,12 +330,12 @@ func (msg *MessageV3) Unmarshal(b []byte) (rest []byte, err error) {
 
 func (msg *MessageV3) String() string {
 	return fmt.Sprintf(
-		`{"Version": "%s", "GlobalData": %s, "SecurityParameter": %s, "Pdu": %s}`,
+		`{"Version": "%s", "GlobalData": %s, "SecurityParameter": %s, "PDU": %s}`,
 		msg.version, msg.globalDataV3.String(), msg.securityParameterV3.String(),
 		msg.pdu.String())
 }
 
-func NewMessage(ver SNMPVersion, pdu Pdu) (msg Message) {
+func NewMessage(ver SNMPVersion, pdu PDU) (msg Message) {
 	m := MessageV1{
 		version: ver,
 		pdu:     pdu,
@@ -354,8 +354,8 @@ func NewMessage(ver SNMPVersion, pdu Pdu) (msg Message) {
 
 type messageProcessing interface {
 	Security() Security
-	PrepareOutgoingMessage(*SNMP, Pdu) (Message, error)
-	PrepareDataElements(*SNMP, Message, []byte) (Pdu, error)
+	PrepareOutgoingMessage(*SNMP, PDU) (Message, error)
+	PrepareDataElements(*SNMP, Message, []byte) (PDU, error)
 }
 
 type messageProcessingV1 struct {
@@ -367,7 +367,7 @@ func (mp *messageProcessingV1) Security() Security {
 }
 
 func (mp *messageProcessingV1) PrepareOutgoingMessage(
-	snmp *SNMP, pdu Pdu) (msg Message, err error) {
+	snmp *SNMP, pdu PDU) (msg Message, err error) {
 
 	pdu.SetRequestId(genRequestId())
 	msg = NewMessage(snmp.args.Version, pdu)
@@ -377,7 +377,7 @@ func (mp *messageProcessingV1) PrepareOutgoingMessage(
 }
 
 func (mp *messageProcessingV1) PrepareDataElements(
-	snmp *SNMP, sendMsg Message, b []byte) (pdu Pdu, err error) {
+	snmp *SNMP, sendMsg Message, b []byte) (pdu PDU, err error) {
 
 	pdu = &PduV1{}
 	recvMsg := NewMessage(snmp.args.Version, pdu)
@@ -404,16 +404,16 @@ func (mp *messageProcessingV1) PrepareDataElements(
 		return nil, err
 	}
 
-	if recvMsg.Pdu().PduType() != GetResponse {
+	if recvMsg.PDU().PduType() != GetResponse {
 		return nil, ResponseError{
 			Message: fmt.Sprintf("Illegal PduType - expected [%s], actual [%v]",
-				GetResponse, recvMsg.Pdu().PduType()),
+				GetResponse, recvMsg.PDU().PduType()),
 		}
 	}
-	if sendMsg.Pdu().RequestId() != recvMsg.Pdu().RequestId() {
+	if sendMsg.PDU().RequestId() != recvMsg.PDU().RequestId() {
 		return nil, ResponseError{
 			Message: fmt.Sprintf("RequestId mismatch - expected [%d], actual [%d]",
-				sendMsg.Pdu().RequestId(), recvMsg.Pdu().RequestId()),
+				sendMsg.PDU().RequestId(), recvMsg.PDU().RequestId()),
 			Detail: fmt.Sprintf("%s vs %s", sendMsg, recvMsg),
 		}
 	}
@@ -429,7 +429,7 @@ func (mp *messageProcessingV3) Security() Security {
 }
 
 func (mp *messageProcessingV3) PrepareOutgoingMessage(
-	snmp *SNMP, pdu Pdu) (msg Message, err error) {
+	snmp *SNMP, pdu PDU) (msg Message, err error) {
 
 	pdu.SetRequestId(genRequestId())
 	msg = NewMessage(snmp.args.Version, pdu)
@@ -451,7 +451,7 @@ func (mp *messageProcessingV3) PrepareOutgoingMessage(
 }
 
 func (mp *messageProcessingV3) PrepareDataElements(
-	snmp *SNMP, sendMsg Message, b []byte) (pdu Pdu, err error) {
+	snmp *SNMP, sendMsg Message, b []byte) (pdu PDU, err error) {
 
 	pdu = &ScopedPdu{}
 	recvMsg := NewMessage(snmp.args.Version, pdu)
@@ -491,12 +491,12 @@ func (mp *messageProcessingV3) PrepareDataElements(
 		return nil, err
 	}
 
-	switch t := rm.Pdu().PduType(); t {
+	switch t := rm.PDU().PduType(); t {
 	case GetResponse:
-		if sm.Pdu().RequestId() != rm.Pdu().RequestId() {
+		if sm.PDU().RequestId() != rm.PDU().RequestId() {
 			return nil, ResponseError{
 				Message: fmt.Sprintf("RequestId mismatch - expected [%d], actual [%d]",
-					sm.Pdu().RequestId(), rm.Pdu().RequestId()),
+					sm.PDU().RequestId(), rm.PDU().RequestId()),
 				Detail: fmt.Sprintf("%s vs %s", sm, rm),
 			}
 		}
