@@ -179,28 +179,28 @@ const (
 
 // ASN.1 Class
 const (
-	classUniversal = iota
-	classApplication
-	classContextSpecific
-	classPrivate
+	ClassUniversal = iota
+	ClassApplication
+	ClassContextSpecific
+	ClassPrivate
 )
 
 // ASN.1 Tag
 const (
-	tagInteger          = 0x02
-	tagOctetString      = 0x04
-	tagNull             = 0x05
-	tagObjectIdentifier = 0x06
-	tagSequence         = 0x10
-	tagIpaddress        = 0x40
-	tagCounter32        = 0x41
-	tagGauge32          = 0x42
-	tagTimeTicks        = 0x43
-	tagOpaque           = 0x44
-	tagCounter64        = 0x46
-	tagNoSucheObject    = 0x80
-	tagNoSucheInstance  = 0x81
-	tagEndOfMibView     = 0x82
+	SYNTAX_INTEGER          = 0x02
+	SYNTAX_OCTETSTRING      = 0x04
+	SYNTAX_NULL             = 0x05
+	SYNTAX_ObjectIdentifier = 0x06
+	SYNTAX_SEQUENCE         = 0x10
+	SYNTAX_IPADDRESS        = 0x40
+	SYNTAX_COUNTER32        = 0x41
+	SYNTAX_GAUGE32          = 0x42
+	SYNTAX_TIMETICKS        = 0x43
+	SYNTAX_OPAQUE           = 0x44
+	SYNTAX_COUNTER64        = 0x46
+	SYNTAX_NOSUCHOBJECT     = 0x80
+	SYNTAX_NOSUCHINSTANCE   = 0x81
+	SYNTAX_ENDOFMIBVIEW     = 0x82
 )
 
 type reportStatusOid string
