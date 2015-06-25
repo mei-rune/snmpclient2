@@ -352,7 +352,7 @@ func NewMessage(ver SNMPVersion, pdu PDU) (msg Message) {
 	return
 }
 
-type messageProcessing interface {
+type MessageProcessing interface {
 	Security() Security
 	PrepareOutgoingMessage(*SNMP, PDU) (Message, error)
 	PrepareDataElements(*SNMP, Message, []byte) (PDU, error)
@@ -514,7 +514,7 @@ func (mp *messageProcessingV3) PrepareDataElements(
 	return
 }
 
-func NewMessageProcessing(ver SNMPVersion) (mp messageProcessing) {
+func NewMessageProcessing(ver SNMPVersion) (mp MessageProcessing) {
 	switch ver {
 	case V1, V2c:
 		mp = &messageProcessingV1{security: &community{}}

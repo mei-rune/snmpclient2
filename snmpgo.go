@@ -117,7 +117,7 @@ func (a *SNMPArguments) String() string {
 // SNMP Object provides functions for the SNMP Client
 type SNMP struct {
 	args SNMPArguments
-	mp   messageProcessing
+	mp   MessageProcessing
 	conn net.Conn
 }
 
