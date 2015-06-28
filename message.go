@@ -101,9 +101,13 @@ func (msg *MessageV1) Unmarshal(b []byte) (rest []byte, err error) {
 }
 
 func (msg *MessageV1) String() string {
+	var pduStr string
+	if nil != msg.pdu {
+		pduStr = msg.pdu.String()
+	}
 	return fmt.Sprintf(
 		`{"Version": "%s", "Community": "%s", "PDU": %s}`,
-		msg.version, msg.Community, msg.pdu.String())
+		msg.version, msg.Community, pduStr)
 }
 
 type securityModel int
@@ -372,7 +376,7 @@ func (mp *messageProcessingV1) PrepareOutgoingMessage(
 	pdu.SetRequestId(genRequestId())
 	msg = NewMessage(snmp.args.Version, pdu)
 
-	err = mp.security.GenerateRequestMessage(snmp, msg)
+	err = mp.security.GenerateRequestMessage(&snmp.args, msg)
 	return
 }
 
@@ -399,7 +403,7 @@ func (mp *messageProcessingV1) PrepareDataElements(
 		}
 	}
 
-	err = mp.security.ProcessIncomingMessage(snmp, sendMsg, recvMsg)
+	err = mp.security.ProcessIncomingMessage(&snmp.args, recvMsg)
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +450,7 @@ func (mp *messageProcessingV3) PrepareOutgoingMessage(
 		}
 	}
 
-	err = mp.security.GenerateRequestMessage(snmp, msg)
+	err = mp.security.GenerateRequestMessage(&snmp.args, msg)
 	return
 }
 
@@ -486,7 +490,7 @@ func (mp *messageProcessingV3) PrepareDataElements(
 		}
 	}
 
-	err = mp.security.ProcessIncomingMessage(snmp, sendMsg, recvMsg)
+	err = mp.security.ProcessIncomingMessage(&snmp.args, recvMsg)
 	if err != nil {
 		return nil, err
 	}

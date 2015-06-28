@@ -123,8 +123,10 @@ func padding(b []byte, size int) []byte {
 }
 
 // For snmpgo testing
-func ArgsValidate(args *SNMPArguments) error { return args.validate() }
+func ArgsValidate(args *Arguments) error     { return args.validate() }
 func SnmpCheckPdu(snmp *SNMP, pdu PDU) error { return snmp.checkPdu(pdu) }
 
 func NewCommunity() Security { return &community{} }
 func NewUsm() Security       { return &USM{} }
+
+func GetArgs(snmp *SNMP) *Arguments { return &snmp.args }

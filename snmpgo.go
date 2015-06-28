@@ -8,7 +8,7 @@ import (
 )
 
 // An argument for creating a SNMP Object
-type SNMPArguments struct {
+type Arguments struct {
 	Version          SNMPVersion   // SNMP version to use
 	Network          string        // See net.Dial parameter (The default is `udp`)
 	Address          string        // See net.Dial parameter
@@ -27,7 +27,7 @@ type SNMPArguments struct {
 	ContextName      string        // Context name (V3 specific)
 }
 
-func (a *SNMPArguments) setDefault() {
+func (a *Arguments) setDefault() {
 	if a.Network == "" {
 		a.Network = "udp"
 	}
@@ -39,7 +39,7 @@ func (a *SNMPArguments) setDefault() {
 	}
 }
 
-func (a *SNMPArguments) validate() error {
+func (a *Arguments) validate() error {
 	if v := a.Version; v != V1 && v != V2c && v != V3 {
 		return ArgumentError{
 			Value:   v,
@@ -110,13 +110,13 @@ func (a *SNMPArguments) validate() error {
 	return nil
 }
 
-func (a *SNMPArguments) String() string {
+func (a *Arguments) String() string {
 	return escape(a)
 }
 
 // SNMP Object provides functions for the SNMP Client
 type SNMP struct {
-	args SNMPArguments
+	args Arguments
 	mp   MessageProcessing
 	conn net.Conn
 }
@@ -140,7 +140,7 @@ func (s *SNMP) Open() (err error) {
 	}
 
 	err = retry(int(s.args.Retries), func() error {
-		return s.mp.Security().Discover(s)
+		return s.mp.Security().Discover(&s.args)
 	})
 	if err != nil {
 		s.Close()
@@ -377,7 +377,7 @@ func (s *SNMP) String() string {
 }
 
 // Create a SNMP Object
-func NewSNMP(args SNMPArguments) (*SNMP, error) {
+func NewSNMP(args Arguments) (*SNMP, error) {
 	if err := args.validate(); err != nil {
 		return nil, err
 	}

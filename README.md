@@ -34,7 +34,7 @@ import (
 )
 
 func main() {
-    snmp, err := snmpgo.NewSNMP(snmpgo.SNMPArguments{
+    snmp, err := snmpgo.NewSNMP(snmpgo.Arguments{
         Version:   snmpgo.V2c,
         Address:   "127.0.0.1:161",
         Retries:   1,

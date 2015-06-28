@@ -9,7 +9,7 @@ import (
 
 func get(agent string, oids snmpgo.Oids) {
 	// create a SNMP Object for each the agent
-	snmp, err := snmpgo.NewSNMP(snmpgo.SNMPArguments{
+	snmp, err := snmpgo.NewSNMP(snmpgo.Arguments{
 		Version:   snmpgo.V2c,
 		Address:   agent,
 		Retries:   1,

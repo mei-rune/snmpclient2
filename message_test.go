@@ -96,7 +96,7 @@ func TestMessageV3(t *testing.T) {
 }
 
 func TestMessageProcessingV1(t *testing.T) {
-	snmp, _ := snmpclient2.NewSNMP(snmpclient2.SNMPArguments{
+	snmp, _ := snmpclient2.NewSNMP(snmpclient2.Arguments{
 		Version:   snmpclient2.V2c,
 		Community: "public",
 	})
@@ -147,7 +147,7 @@ func TestMessageProcessingV1(t *testing.T) {
 }
 
 func TestMessageProcessingV3(t *testing.T) {
-	snmp, _ := snmpclient2.NewSNMP(snmpclient2.SNMPArguments{
+	snmp, _ := snmpclient2.NewSNMP(snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
 		UserName:      "myName",
 		SecurityLevel: snmpclient2.AuthPriv,
@@ -157,7 +157,7 @@ func TestMessageProcessingV3(t *testing.T) {
 		PrivProtocol:  snmpclient2.Des,
 	})
 	var mss snmpclient2.Message = &snmpclient2.MessageV1{}
-	t.Log(mss)
+	t.Log(mss.String())
 	mp := snmpclient2.NewMessageProcessing(snmpclient2.V3)
 	usm := mp.Security().(*snmpclient2.USM)
 	usm.AuthKey = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
@@ -228,6 +228,7 @@ func TestMessageProcessingV3(t *testing.T) {
 	pdu.SetRequestId(requestId)
 	pduBytes, _ = pdu.Marshal()
 	rmsg.SetPduBytes(pduBytes)
+	rmsg.UserName = []byte(snmpclient2.GetArgs(snmp).UserName)
 	b, _ = rmsg.Marshal()
 	_, err = mp.PrepareDataElements(snmp, msg, b)
 	if err != nil {

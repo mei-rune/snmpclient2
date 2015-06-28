@@ -8,9 +8,9 @@ import (
 
 func main() {
 	// `snmpgo.SNMP.Open` function execute the EngineID Discovery when you use V3.
-	// Specify the Agent's EngineID to `snmpgo.SNMPArguments.SecurityEngineId` parameter,
+	// Specify the Agent's EngineID to `snmpgo.Arguments.SecurityEngineId` parameter,
 	// if you want to suppress this behavior.
-	snmp, err := snmpgo.NewSNMP(snmpgo.SNMPArguments{
+	snmp, err := snmpgo.NewSNMP(snmpgo.Arguments{
 		Version:          snmpgo.V3,
 		Address:          "127.0.0.1:162",
 		Retries:          1,

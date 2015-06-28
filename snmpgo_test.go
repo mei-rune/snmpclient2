@@ -8,31 +8,31 @@ import (
 )
 
 func TestSNMPArguments(t *testing.T) {
-	args := &snmpclient2.SNMPArguments{Version: 2}
+	args := &snmpclient2.Arguments{Version: 2}
 	err := snmpclient2.ArgsValidate(args)
 	if err == nil {
 		t.Error("validate() - version check")
 	}
 
-	args = &snmpclient2.SNMPArguments{MessageMaxSize: -1}
+	args = &snmpclient2.Arguments{MessageMaxSize: -1}
 	err = snmpclient2.ArgsValidate(args)
 	if err == nil {
 		t.Error("validate() - message size(min)")
 	}
 
-	args = &snmpclient2.SNMPArguments{MessageMaxSize: math.MaxInt32 + 1}
+	args = &snmpclient2.Arguments{MessageMaxSize: math.MaxInt32 + 1}
 	err = snmpclient2.ArgsValidate(args)
 	if err == nil {
 		t.Error("validate() - message size(max)")
 	}
 
-	args = &snmpclient2.SNMPArguments{Version: snmpclient2.V3}
+	args = &snmpclient2.Arguments{Version: snmpclient2.V3}
 	err = snmpclient2.ArgsValidate(args)
 	if err == nil {
 		t.Error("validate() - user name")
 	}
 
-	args = &snmpclient2.SNMPArguments{
+	args = &snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
 		UserName:      "MyName",
 		SecurityLevel: snmpclient2.AuthNoPriv,
@@ -42,7 +42,7 @@ func TestSNMPArguments(t *testing.T) {
 		t.Error("validate() - auth password")
 	}
 
-	args = &snmpclient2.SNMPArguments{
+	args = &snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
 		UserName:      "MyName",
 		SecurityLevel: snmpclient2.AuthNoPriv,
@@ -53,7 +53,7 @@ func TestSNMPArguments(t *testing.T) {
 		t.Error("validate() - auth protocol")
 	}
 
-	args = &snmpclient2.SNMPArguments{
+	args = &snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
 		UserName:      "MyName",
 		SecurityLevel: snmpclient2.AuthPriv,
@@ -65,7 +65,7 @@ func TestSNMPArguments(t *testing.T) {
 		t.Error("validate() - priv password")
 	}
 
-	args = &snmpclient2.SNMPArguments{
+	args = &snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
 		UserName:      "MyName",
 		SecurityLevel: snmpclient2.AuthPriv,
@@ -78,7 +78,7 @@ func TestSNMPArguments(t *testing.T) {
 		t.Error("validate() - priv protocol")
 	}
 
-	args = &snmpclient2.SNMPArguments{
+	args = &snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
 		UserName:      "MyName",
 		SecurityLevel: snmpclient2.AuthPriv,
@@ -94,7 +94,7 @@ func TestSNMPArguments(t *testing.T) {
 }
 
 func TestSNMP(t *testing.T) {
-	snmp, _ := snmpclient2.NewSNMP(snmpclient2.SNMPArguments{
+	snmp, _ := snmpclient2.NewSNMP(snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
 		UserName:      "MyName",
 		SecurityLevel: snmpclient2.AuthPriv,

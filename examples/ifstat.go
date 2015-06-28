@@ -32,7 +32,7 @@ func usage(msg string, code int) {
 	os.Exit(code)
 }
 
-func parseArgs() (*snmpgo.SNMPArguments, []string) {
+func parseArgs() (*snmpgo.Arguments, []string) {
 	flag.Usage = func() {
 		if errMessage != "" {
 			fmt.Fprintf(os.Stderr, "%s\n", errMessage)
@@ -65,7 +65,7 @@ func parseArgs() (*snmpgo.SNMPArguments, []string) {
 
 	flag.Parse()
 
-	args := &snmpgo.SNMPArguments{
+	args := &snmpgo.Arguments{
 		Network:          *protocol,
 		Address:          flag.Arg(0),
 		Timeout:          time.Duration(*timeout) * time.Second,
