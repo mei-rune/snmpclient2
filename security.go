@@ -40,14 +40,14 @@ func (c *community) GenerateRequestMessage(args *Arguments, sendMsg Message) (er
 func (c *community) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err error) {
 	rm := recvMsg.(*MessageV1)
 
-	if !bytes.Equal([]byte(args.Community), rm.Community) {
-		return ResponseError{
-			Message: fmt.Sprintf(
-				"Community mismatch - expected [%s], actual [%s]",
-				string(args.Community), string(rm.Community)),
-			Detail: fmt.Sprintf("%s vs %s", args, rm),
-		}
-	}
+	// if !bytes.Equal([]byte(args.Community), rm.Community) {
+	// 	return ResponseError{
+	// 		Message: fmt.Sprintf(
+	// 			"Community mismatch - expected [%s], actual [%s]",
+	// 			string(args.Community), string(rm.Community)),
+	// 		Detail: fmt.Sprintf("%s vs %s", args, rm),
+	// 	}
+	// }
 
 	_, err = rm.PDU().Unmarshal(rm.PduBytes())
 	if err != nil {
