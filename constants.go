@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-type SNMPVersion int
+type SnmpVersion int
 
 const (
-	V1  SNMPVersion = 0
-	V2c SNMPVersion = 1
-	V3  SNMPVersion = 3
+	V1  SnmpVersion = 0
+	V2c SnmpVersion = 1
+	V3  SnmpVersion = 3
 )
 
-func (s SNMPVersion) String() string {
+func (s SnmpVersion) String() string {
 	switch s {
 	case V1:
 		return "1"

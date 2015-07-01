@@ -430,7 +430,7 @@ func (pdu *ScopedPdu) String() string {
 		pdu.varBinds.String())
 }
 
-func NewPdu(ver SNMPVersion, t PduType) (pdu PDU) {
+func NewPdu(ver SnmpVersion, t PduType) (pdu PDU) {
 	p := PduV1{pduType: t}
 	switch ver {
 	case V1, V2c:
@@ -441,7 +441,7 @@ func NewPdu(ver SNMPVersion, t PduType) (pdu PDU) {
 	return
 }
 
-func NewPduWithOids(ver SNMPVersion, t PduType, oids Oids) (pdu PDU) {
+func NewPduWithOids(ver SnmpVersion, t PduType, oids Oids) (pdu PDU) {
 	pdu = NewPdu(ver, t)
 	for _, o := range oids {
 		pdu.AppendVarBind(o, NewNull())
@@ -449,7 +449,7 @@ func NewPduWithOids(ver SNMPVersion, t PduType, oids Oids) (pdu PDU) {
 	return
 }
 
-func NewPduWithVarBinds(ver SNMPVersion, t PduType, varBinds VarBinds) (pdu PDU) {
+func NewPduWithVarBinds(ver SnmpVersion, t PduType, varBinds VarBinds) (pdu PDU) {
 	pdu = NewPdu(ver, t)
 	for _, v := range varBinds {
 		pdu.AppendVarBind(v.Oid, v.Variable)

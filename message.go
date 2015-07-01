@@ -16,7 +16,7 @@ import (
 // +--------------------------------------------------------------------------------------------------------------------------------+
 
 type Message interface {
-	Version() SNMPVersion
+	Version() SnmpVersion
 	PDU() PDU
 	PduBytes() []byte
 	SetPduBytes([]byte)
@@ -26,13 +26,13 @@ type Message interface {
 }
 
 type MessageV1 struct {
-	version   SNMPVersion
+	version   SnmpVersion
 	Community []byte
 	pduBytes  []byte
 	pdu       PDU
 }
 
-func (msg *MessageV1) Version() SNMPVersion {
+func (msg *MessageV1) Version() SnmpVersion {
 	return msg.version
 }
 
@@ -94,7 +94,7 @@ func (msg *MessageV1) Unmarshal(b []byte) (rest []byte, err error) {
 		return
 	}
 
-	msg.version = SNMPVersion(version)
+	msg.version = SnmpVersion(version)
 	msg.Community = community
 	msg.pduBytes = next
 	return
@@ -327,7 +327,7 @@ func (msg *MessageV3) Unmarshal(b []byte) (rest []byte, err error) {
 		return
 	}
 
-	msg.version = SNMPVersion(version)
+	msg.version = SnmpVersion(version)
 	msg.pduBytes = next
 	return
 }
@@ -339,7 +339,7 @@ func (msg *MessageV3) String() string {
 		msg.pdu.String())
 }
 
-func NewMessage(ver SNMPVersion, pdu PDU) (msg Message) {
+func NewMessage(ver SnmpVersion, pdu PDU) (msg Message) {
 	m := MessageV1{
 		version: ver,
 		pdu:     pdu,
@@ -397,7 +397,7 @@ func (mp *messageProcessingV1) PrepareDataElements(
 	if sendMsg.Version() != recvMsg.Version() {
 		return nil, ResponseError{
 			Message: fmt.Sprintf(
-				"SNMPVersion mismatch - expected [%v], actual [%v]",
+				"SnmpVersion mismatch - expected [%v], actual [%v]",
 				sendMsg.Version(), recvMsg.Version()),
 			Detail: fmt.Sprintf("%s vs %s", sendMsg, recvMsg),
 		}
@@ -473,7 +473,7 @@ func (mp *messageProcessingV3) PrepareDataElements(
 	if sm.Version() != rm.Version() {
 		return nil, ResponseError{
 			Message: fmt.Sprintf(
-				"SNMPVersion mismatch - expected [%v], actual [%v]", sm.Version(), rm.Version()),
+				"SnmpVersion mismatch - expected [%v], actual [%v]", sm.Version(), rm.Version()),
 			Detail: fmt.Sprintf("%s vs %s", sm, rm),
 		}
 	}
@@ -518,7 +518,7 @@ func (mp *messageProcessingV3) PrepareDataElements(
 	return
 }
 
-func NewMessageProcessing(ver SNMPVersion) (mp MessageProcessing) {
+func NewMessageProcessing(ver SnmpVersion) (mp MessageProcessing) {
 	switch ver {
 	case V1, V2c:
 		mp = &messageProcessingV1{security: &community{}}

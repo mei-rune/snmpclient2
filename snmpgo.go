@@ -9,7 +9,7 @@ import (
 
 // An argument for creating a SNMP Object
 type Arguments struct {
-	Version          SNMPVersion   // SNMP version to use
+	Version          SnmpVersion   // SNMP version to use
 	Network          string        // See net.Dial parameter (The default is `udp`)
 	Address          string        // See net.Dial parameter
 	Timeout          time.Duration // Request timeout (The default is 5sec)
