@@ -188,11 +188,11 @@ func TestPduV1(t *testing.T) {
 	pdu.SetErrorIndex(2)
 
 	oid, _ := snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
-	pdu.AppendVarBind(oid, snmpclient2.NewOctetString([]byte("MyHost")))
+	pdu.AppendVariableBinding(oid, snmpclient2.NewOctetString([]byte("MyHost")))
 	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.2.0")
-	pdu.AppendVarBind(oid, snmpclient2.NewNull())
+	pdu.AppendVariableBinding(oid, snmpclient2.NewNull())
 	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.3.0")
-	pdu.AppendVarBind(oid, snmpclient2.NewTimeTicks(uint32(11111)))
+	pdu.AppendVariableBinding(oid, snmpclient2.NewTimeTicks(uint32(11111)))
 
 	expBuf := []byte{
 		0xa0, 0x3d, 0x02, 0x01, 0x7b, 0x02, 0x01, 0x01, 0x02, 0x01, 0x02,
@@ -237,11 +237,11 @@ func TestScopedPdu(t *testing.T) {
 	sp.ContextName = []byte("MyContext")
 
 	oid, _ := snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
-	pdu.AppendVarBind(oid, snmpclient2.NewOctetString([]byte("MyHost")))
+	pdu.AppendVariableBinding(oid, snmpclient2.NewOctetString([]byte("MyHost")))
 	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.2.0")
-	pdu.AppendVarBind(oid, snmpclient2.NewNull())
+	pdu.AppendVariableBinding(oid, snmpclient2.NewNull())
 	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.3.0")
-	pdu.AppendVarBind(oid, snmpclient2.NewTimeTicks(uint32(11111)))
+	pdu.AppendVariableBinding(oid, snmpclient2.NewTimeTicks(uint32(11111)))
 
 	expBuf := []byte{
 		0x30, 0x54, 0x04, 0x08, 0x80, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,

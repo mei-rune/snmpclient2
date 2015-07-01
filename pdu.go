@@ -175,7 +175,7 @@ type PDU interface {
 	SetErrorIndex(int)
 	SetNonrepeaters(int)
 	SetMaxRepetitions(int)
-	AppendVarBind(*Oid, Variable)
+	AppendVariableBinding(*Oid, Variable)
 	VariableBindings() VariableBindings
 	Marshal() ([]byte, error)
 	Unmarshal([]byte) (rest []byte, err error)
@@ -227,7 +227,7 @@ func (pdu *PduV1) SetMaxRepetitions(i int) {
 	pdu.errorIndex = i
 }
 
-func (pdu *PduV1) AppendVarBind(oid *Oid, variable Variable) {
+func (pdu *PduV1) AppendVariableBinding(oid *Oid, variable Variable) {
 	if nil == variable {
 		variable = NewNull()
 	}
@@ -444,7 +444,7 @@ func NewPdu(ver SnmpVersion, t PduType) (pdu PDU) {
 func NewPduWithOids(ver SnmpVersion, t PduType, oids Oids) (pdu PDU) {
 	pdu = NewPdu(ver, t)
 	for _, o := range oids {
-		pdu.AppendVarBind(o, NewNull())
+		pdu.AppendVariableBinding(o, NewNull())
 	}
 	return
 }
@@ -452,7 +452,7 @@ func NewPduWithOids(ver SnmpVersion, t PduType, oids Oids) (pdu PDU) {
 func NewPduWithVarBinds(ver SnmpVersion, t PduType, VariableBindings VariableBindings) (pdu PDU) {
 	pdu = NewPdu(ver, t)
 	for _, v := range VariableBindings {
-		pdu.AppendVarBind(v.Oid, v.Variable)
+		pdu.AppendVariableBinding(v.Oid, v.Variable)
 	}
 	return
 }
