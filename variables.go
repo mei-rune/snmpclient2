@@ -3,13 +3,62 @@ package snmpclient2
 import (
 	"bytes"
 	"encoding/asn1"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
+	"net"
 	"sort"
 	"strconv"
 	"strings"
 )
+
+const (
+	syntexErrorMessage = "snmp value format error, excepted format is '[type]value'," +
+		" type is 'null, int32, gauge, counter32, counter64, octet, oid, ip, timeticks', value is a string. - %s"
+
+	notError = "this is not a error. please call IsError() first."
+)
+
+func NewVariable(s string) (Variable, error) {
+	if "" == s {
+		return nil, fmt.Errorf("input parameter is empty.")
+	}
+	if s[0] != '[' {
+		return nil, fmt.Errorf(syntexErrorMessage, s)
+	}
+	ss := strings.SplitN(s[1:], "]", 2)
+	if 2 != len(ss) {
+		return nil, fmt.Errorf(syntexErrorMessage, s)
+	}
+
+	switch strings.ToLower(ss[0]) {
+	case "null", "nil":
+		return NewNull(), nil
+	case "int", "int32":
+		// error pattern: return newSnmpInt32FromString(ss[1])
+		// see http://www.golang.org/doc/go_faq.html#nil_error
+		return NewIntegerFromString(ss[1])
+	case "uint", "uint32", "gauge", "gauge32":
+		return NewGauge32FromString(ss[1])
+	case "counter", "counter32":
+		return NewCounter32FromString(ss[1])
+	case "counter64":
+		return NewCounter64FromString(ss[1])
+	case "octets":
+		return NewOctetStringFromString(ss[1])
+	case "opaque":
+		return NewOpaqueFromString(ss[1])
+	case "oid":
+		return NewOidFromString(ss[1])
+	case "ip", "ipaddress":
+		return NewIPAddressFromString(ss[1])
+	case "timeticks":
+		return NewTimeticksFromString(ss[1])
+	}
+
+	return nil, fmt.Errorf("unsupported snmp type -", ss[0])
+}
 
 type Variable interface {
 	Int() int64
@@ -73,6 +122,15 @@ func NewInteger(i int32) *Integer {
 	return &Integer{i}
 }
 
+func NewIntegerFromString(s string) (Variable, error) {
+	i, ok := strconv.ParseInt(s, 10, 32)
+	if nil != ok {
+		return nil, fmt.Errorf("int32 style error, value is %s, exception is %s", s, ok.Error())
+	}
+
+	return &Integer{int32(i)}, nil
+}
+
 type OctetString struct {
 	Value []byte
 }
@@ -122,6 +180,14 @@ func NewOctetString(b []byte) *OctetString {
 	return &OctetString{b}
 }
 
+func NewOctetStringFromString(s string) (Variable, error) {
+	bs, err := hex.DecodeString(s)
+	if nil != err {
+		return nil, err
+	}
+	return &OctetString{bs}, nil
+}
+
 type Null struct{}
 
 func (v *Null) IsError() bool {
@@ -160,8 +226,10 @@ func (v *Null) Unmarshal(b []byte) (rest []byte, err error) {
 	return unmarshalEmpty(b, SYNTAX_NULL)
 }
 
+var null = &Null{}
+
 func NewNull() *Null {
-	return &Null{}
+	return null
 }
 
 type Oid struct {
@@ -258,64 +326,81 @@ func (v *Oid) AppendSubIds(subs []int) (*Oid, error) {
 		buf.WriteString(".")
 		buf.WriteString(strconv.Itoa(i))
 	}
-	return NewOid(buf.String())
+	return ParseOidFromString(buf.String())
 }
 
-func NewOid(s string) (oid *Oid, err error) {
-	subids := strings.Split(s, ".")
-
-	// leading dot
-	if subids[0] == "" {
-		subids = subids[1:]
+func ParseOidFromString(s string) (*Oid, error) {
+	ss := strings.Split(strings.Trim(s, "."), ".")
+	if 2 > len(ss) {
+		ss = strings.Split(strings.Trim(s, "_"), "_")
 	}
 
-	// RFC2578 Section 3.5
-	if len(subids) > 128 {
-		return nil, ArgumentError{
-			Value:   s,
-			Message: "The sub-identifiers in an OID is up to 128",
+	result := make([]int, 0, len(ss))
+	for idx, v := range ss {
+		if 0 == len(v) {
+			if 0 != idx {
+				return nil, fmt.Errorf("oid is syntex error, value is %s", s)
+			}
+			continue
 		}
-	}
 
-	o := make(asn1.ObjectIdentifier, len(subids))
-	for i, v := range subids {
-		o[i], err = strconv.Atoi(v)
-		if err != nil || o[i] < 0 || o[i] > math.MaxUint32 {
+		if num, err := strconv.Atoi(v); err == nil && num >= 0 && num <= math.MaxUint32 {
+			result = append(result, int(num))
+			continue
+		}
+
+		if 0 != idx {
 			return nil, ArgumentError{
 				Value:   s,
 				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, math.MaxUint32),
 			}
 		}
-	}
 
-	if len(o) > 0 && o[0] > 2 {
-		return nil, ArgumentError{
-			Value:   s,
-			Message: "The first sub-identifier is range 0..2",
+		switch v {
+		case "iso":
+			result = append(result, 1)
+		case "ccitt":
+			result = append(result, 2)
+		case "iso/ccitt":
+			result = append(result, 3)
+		case "SNMPv2-SMI::zeroDotZero":
+			result = append(result, 0, 0)
+		case "SNMPv2-SMI::internet":
+			result = append(result, 1, 3, 6, 1)
+		case "SNMPv2-SMI::experimental":
+			result = append(result, 1, 3, 6, 1, 3)
+		case "SNMPv2-SMI::private":
+			result = append(result, 1, 3, 6, 1, 4)
+		case "SNMPv2-SMI::enterprises":
+			result = append(result, 1, 3, 6, 1, 4, 1)
+		case "SNMPv2-SMI::security":
+			result = append(result, 1, 3, 6, 1, 5)
+		default:
+			return nil, ArgumentError{
+				Value:   s,
+				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, math.MaxUint32),
+			}
 		}
-	}
 
-	// ISO/IEC 8825 Section 8.19.4
-	if len(o) < 2 {
-		return nil, ArgumentError{
-			Value:   s,
-			Message: "The first and second sub-identifier is required",
-		}
 	}
+	return &Oid{asn1.ObjectIdentifier(result)}, nil
+}
 
-	if o[0] < 2 && o[1] >= 40 {
-		return nil, ArgumentError{
-			Value:   s,
-			Message: "The second sub-identifier is range 0..39",
-		}
+func NewOid(s string) (*Oid, error) {
+	return ParseOidFromString(s)
+}
+
+func NewOidFromString(s string) (Variable, error) {
+	if o, e := ParseOidFromString(s); nil == e {
+		return o, nil
+	} else {
+		return nil, e
 	}
-
-	return &Oid{o}, nil
 }
 
 // MustNewOid is like NewOid but panics if argument cannot be parsed
 func MustNewOid(s string) *Oid {
-	if oid, err := NewOid(s); err != nil {
+	if oid, err := ParseOidFromString(s); err != nil {
 		panic(`snmpgo.MustNewOid: ` + err.Error())
 	} else {
 		return oid
@@ -384,7 +469,7 @@ func (o sortableOids) Less(i, j int) bool {
 
 func NewOids(s []string) (oids Oids, err error) {
 	for _, l := range s {
-		o, e := NewOid(l)
+		o, e := ParseOidFromString(l)
 		if e != nil {
 			return nil, e
 		}
@@ -449,6 +534,19 @@ func NewIpaddress(a, b, c, d byte) *Ipaddress {
 	return &Ipaddress{OctetString{[]byte{a, b, c, d}}}
 }
 
+func NewIPAddressFromString(s string) (Variable, error) {
+	addr := net.ParseIP(s)
+	if nil == addr {
+		return nil, fmt.Errorf("SnmpAddress style error, value is %s", s)
+	}
+	addr = addr.To4()
+	if nil == addr {
+		return nil, fmt.Errorf("SnmpAddress style error, value is %s", s)
+	}
+
+	return &Ipaddress{OctetString{[]byte{addr[0], addr[1], addr[3], addr[4]}}}, nil
+}
+
 type Counter32 struct {
 	Value uint32
 }
@@ -497,6 +595,14 @@ func NewCounter32(i uint32) *Counter32 {
 	return &Counter32{i}
 }
 
+func NewCounter32FromString(s string) (Variable, error) {
+	i, ok := strconv.ParseUint(s, 10, 32)
+	if nil != ok {
+		return nil, fmt.Errorf("counter32 style error, value is %s, exception is %s", s, ok.Error())
+	}
+	return &Counter32{uint32(i)}, nil
+}
+
 type Gauge32 struct {
 	Counter32
 }
@@ -525,6 +631,14 @@ func NewGauge32(i uint32) *Gauge32 {
 	return &Gauge32{Counter32{i}}
 }
 
+func NewGauge32FromString(s string) (Variable, error) {
+	u32, ok := strconv.ParseUint(s, 10, 32)
+	if nil != ok {
+		return nil, fmt.Errorf("gauge style error, value is %s, exception is %s", s, ok.Error())
+	}
+	return &Gauge32{Counter32{uint32(u32)}}, nil
+}
+
 type TimeTicks struct {
 	Counter32
 }
@@ -551,6 +665,14 @@ func (v *TimeTicks) Unmarshal(b []byte) (rest []byte, err error) {
 
 func NewTimeTicks(i uint32) *TimeTicks {
 	return &TimeTicks{Counter32{i}}
+}
+
+func NewTimeticksFromString(s string) (Variable, error) {
+	u32, ok := strconv.ParseUint(s, 10, 32)
+	if nil != ok {
+		return nil, fmt.Errorf("snmpTimeticks style error, value is %s, exception is %s", s, ok.Error())
+	}
+	return &TimeTicks{Counter32{uint32(u32)}}, nil
 }
 
 type Opaque struct {
@@ -583,6 +705,14 @@ func (v *Opaque) Unmarshal(b []byte) (rest []byte, err error) {
 
 func NewOpaque(b []byte) *Opaque {
 	return &Opaque{OctetString{b}}
+}
+
+func NewOpaqueFromString(s string) (Variable, error) {
+	bs, err := hex.DecodeString(s)
+	if nil != err {
+		return nil, err
+	}
+	return &Opaque{OctetString{bs}}, nil
 }
 
 type Counter64 struct {
@@ -635,6 +765,14 @@ func (v *Counter64) Unmarshal(b []byte) (rest []byte, err error) {
 
 func NewCounter64(i uint64) *Counter64 {
 	return &Counter64{i}
+}
+
+func NewCounter64FromString(s string) (Variable, error) {
+	i, ok := strconv.ParseUint(s, 10, 64)
+	if nil != ok {
+		return nil, fmt.Errorf("counter64 style error, value is %s, exception is %s", s, ok.Error())
+	}
+	return &Counter64{i}, nil
 }
 
 type NoSucheObject struct {

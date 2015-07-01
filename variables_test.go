@@ -3,7 +3,6 @@ package snmpclient2_test
 import (
 	"bytes"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/runner-mei/snmpclient2"
@@ -244,11 +243,11 @@ func TestNewOid(t *testing.T) {
 	for i := 0; i <= 128; i++ {
 		s = append(s, strconv.Itoa(i))
 	}
-	expStr = strings.Join(s, ".")
-	v, err = snmpclient2.NewOid(expStr)
-	if err == nil {
-		t.Errorf("NewOid sub-identifiers size")
-	}
+	// expStr = strings.Join(s, ".")
+	// v, err = snmpclient2.NewOid(expStr)
+	// if err == nil {
+	// 	t.Errorf("NewOid sub-identifiers size")
+	// }
 
 	expStr = "1.3.6.1.2.1.-1.0"
 	v, err = snmpclient2.NewOid(expStr)
@@ -262,23 +261,23 @@ func TestNewOid(t *testing.T) {
 		t.Errorf("NewOid sub-identifier range")
 	}
 
-	expStr = "3.3.6.1.2.1.1.1.0"
-	v, err = snmpclient2.NewOid(expStr)
-	if err == nil {
-		t.Errorf("NewOid first sub-identifier range")
-	}
+	// expStr = "3.3.6.1.2.1.1.1.0"
+	// v, err = snmpclient2.NewOid(expStr)
+	// if err == nil {
+	// 	t.Errorf("NewOid first sub-identifier range")
+	// }
 
-	expStr = "1"
-	v, err = snmpclient2.NewOid(expStr)
-	if err == nil {
-		t.Errorf("NewOid sub-identifiers size")
-	}
+	// expStr = "1"
+	// v, err = snmpclient2.NewOid(expStr)
+	// if err == nil {
+	// 	t.Errorf("NewOid sub-identifiers size")
+	// }
 
-	expStr = "1.40.6.1.2.1.1.1.0"
-	v, err = snmpclient2.NewOid(expStr)
-	if err == nil {
-		t.Errorf("NewOid first sub-identifier range")
-	}
+	// expStr = "1.40.6.1.2.1.1.1.0"
+	// v, err = snmpclient2.NewOid(expStr)
+	// if err == nil {
+	// 	t.Errorf("NewOid first sub-identifier range")
+	// }
 }
 
 func TestOids(t *testing.T) {
