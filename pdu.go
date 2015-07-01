@@ -228,6 +228,10 @@ func (pdu *PduV1) SetMaxRepetitions(i int) {
 }
 
 func (pdu *PduV1) AppendVarBind(oid *Oid, variable Variable) {
+	if nil == variable {
+		variable = NewNull()
+	}
+
 	pdu.varBinds = append(pdu.varBinds, &VarBind{
 		Oid:      oid,
 		Variable: variable,
