@@ -69,7 +69,7 @@ func (v *VarBind) String() string {
 		oid = v.Oid.ToString()
 	}
 	if v.Variable != nil {
-		vtype = v.Variable.Type()
+		vtype = ToSyntexString(v.Variable.Syntex())
 		value = escape(v.Variable.ToString())
 	}
 	return fmt.Sprintf(`{"Oid": "%s", "Variable": {"Type": "%s", "Value": %s}}`,

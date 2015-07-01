@@ -70,7 +70,7 @@ type Variable interface {
 	ErrorMessage() string
 
 	// Return a string of type
-	Type() string
+	Syntex() int
 	Marshal() ([]byte, error)
 	Unmarshal([]byte) (rest []byte, err error)
 }
@@ -106,8 +106,8 @@ func (v *Integer) String() string {
 	return "[int]" + strconv.FormatInt(int64(v.Value), 10)
 }
 
-func (v *Integer) Type() string {
-	return "Integer"
+func (v *Integer) Syntex() int {
+	return SYNTAX_INTEGER
 }
 
 func (v *Integer) Marshal() ([]byte, error) {
@@ -164,8 +164,8 @@ func (v *OctetString) String() string {
 	return "[octets]" + v.ToString()
 }
 
-func (v *OctetString) Type() string {
-	return "OctetString"
+func (v *OctetString) Syntex() int {
+	return SYNTAX_OCTETSTRING
 }
 
 func (v *OctetString) Marshal() ([]byte, error) {
@@ -214,8 +214,8 @@ func (v *Null) String() string {
 	return "[null]"
 }
 
-func (v *Null) Type() string {
-	return "Null"
+func (v *Null) Syntex() int {
+	return SYNTAX_NULL
 }
 
 func (v *Null) Marshal() ([]byte, error) {
@@ -260,8 +260,8 @@ func (v *Oid) String() string {
 	return "[oid]" + v.Value.String()
 }
 
-func (v *Oid) Type() string {
-	return "Oid"
+func (v *Oid) Syntex() int {
+	return SYNTAX_OID
 }
 
 func (v *Oid) Marshal() ([]byte, error) {
@@ -514,8 +514,8 @@ func (v *Ipaddress) String() string {
 	return "ip" + v.ToString()
 }
 
-func (v *Ipaddress) Type() string {
-	return "Ipaddress"
+func (v *Ipaddress) Syntex() int {
+	return SYNTAX_IPADDRESS
 }
 
 func (v *Ipaddress) Marshal() ([]byte, error) {
@@ -575,8 +575,8 @@ func (v *Counter32) String() string {
 	return "[counter32]" + strconv.FormatInt(int64(v.Value), 10)
 }
 
-func (v *Counter32) Type() string {
-	return "Counter32"
+func (v *Counter32) Syntex() int {
+	return SYNTAX_COUNTER32
 }
 
 func (v *Counter32) Marshal() ([]byte, error) {
@@ -611,8 +611,8 @@ func (v *Gauge32) String() string {
 	return "[gauge32]" + strconv.FormatInt(int64(v.Value), 10)
 }
 
-func (v *Gauge32) Type() string {
-	return "Gauge32"
+func (v *Gauge32) Syntex() int {
+	return SYNTAX_GAUGE32
 }
 
 func (v *Gauge32) Marshal() ([]byte, error) {
@@ -647,8 +647,8 @@ func (v *TimeTicks) String() string {
 	return "[timeticks]" + strconv.FormatInt(int64(v.Value), 10)
 }
 
-func (v *TimeTicks) Type() string {
-	return "TimeTicks"
+func (v *TimeTicks) Syntex() int {
+	return SYNTAX_TIMETICKS
 }
 
 func (v *TimeTicks) Marshal() ([]byte, error) {
@@ -687,8 +687,8 @@ func (v *Opaque) String() string {
 	return "[opaque]" + v.ToString()
 }
 
-func (v *Opaque) Type() string {
-	return "Opaque"
+func (v *Opaque) Syntex() int {
+	return SYNTAX_OPAQUE
 }
 
 func (v *Opaque) Marshal() ([]byte, error) {
@@ -746,8 +746,8 @@ func (v *Counter64) String() string {
 	return "[counter64]" + strconv.FormatUint(v.Value, 10)
 }
 
-func (v *Counter64) Type() string {
-	return "Counter64"
+func (v *Counter64) Syntex() int {
+	return SYNTAX_COUNTER64
 }
 
 func (v *Counter64) Marshal() ([]byte, error) {
@@ -791,8 +791,8 @@ func (v *NoSucheObject) String() string {
 	return "[error]NoSucheObject"
 }
 
-func (v *NoSucheObject) Type() string {
-	return "NoSucheObject"
+func (v *NoSucheObject) Syntex() int {
+	return SYNTAX_NOSUCHOBJECT
 }
 
 func (v *NoSucheObject) Marshal() ([]byte, error) {
@@ -823,8 +823,8 @@ func (v *NoSucheInstance) String() string {
 	return "[error]NoSucheInstance"
 }
 
-func (v *NoSucheInstance) Type() string {
-	return "NoSucheInstance"
+func (v *NoSucheInstance) Syntex() int {
+	return SYNTAX_NOSUCHINSTANCE
 }
 
 func (v *NoSucheInstance) Marshal() ([]byte, error) {
@@ -855,8 +855,8 @@ func (v *EndOfMibView) String() string {
 	return "[error]EndOfMibView"
 }
 
-func (v *EndOfMibView) Type() string {
-	return "EndOfMibView"
+func (v *EndOfMibView) Syntex() int {
+	return SYNTAX_ENDOFMIBVIEW
 }
 
 func (v *EndOfMibView) Marshal() ([]byte, error) {
@@ -890,7 +890,7 @@ func unmarshalVariable(b []byte) (v Variable, rest []byte, err error) {
 		case SYNTAX_NULL:
 			var u Null
 			v = &u
-		case SYNTAX_ObjectIdentifier:
+		case SYNTAX_OID:
 			var u Oid
 			v = &u
 		}

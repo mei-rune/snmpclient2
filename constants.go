@@ -1,6 +1,7 @@
 package snmpclient2
 
 import (
+	"strconv"
 	"time"
 )
 
@@ -187,21 +188,56 @@ const (
 
 // ASN.1 Tag
 const (
-	SYNTAX_INTEGER          = 0x02
-	SYNTAX_OCTETSTRING      = 0x04
-	SYNTAX_NULL             = 0x05
-	SYNTAX_ObjectIdentifier = 0x06
-	SYNTAX_SEQUENCE         = 0x10
-	SYNTAX_IPADDRESS        = 0x40
-	SYNTAX_COUNTER32        = 0x41
-	SYNTAX_GAUGE32          = 0x42
-	SYNTAX_TIMETICKS        = 0x43
-	SYNTAX_OPAQUE           = 0x44
-	SYNTAX_COUNTER64        = 0x46
-	SYNTAX_NOSUCHOBJECT     = 0x80
-	SYNTAX_NOSUCHINSTANCE   = 0x81
-	SYNTAX_ENDOFMIBVIEW     = 0x82
+	SYNTAX_INTEGER        = 0x02
+	SYNTAX_OCTETSTRING    = 0x04
+	SYNTAX_NULL           = 0x05
+	SYNTAX_OID            = 0x06
+	SYNTAX_SEQUENCE       = 0x10
+	SYNTAX_IPADDRESS      = 0x40
+	SYNTAX_COUNTER32      = 0x41
+	SYNTAX_GAUGE32        = 0x42
+	SYNTAX_TIMETICKS      = 0x43
+	SYNTAX_OPAQUE         = 0x44
+	SYNTAX_COUNTER64      = 0x46
+	SYNTAX_NOSUCHOBJECT   = 0x80
+	SYNTAX_NOSUCHINSTANCE = 0x81
+	SYNTAX_ENDOFMIBVIEW   = 0x82
 )
+
+func ToSyntexString(t int) string {
+	switch t {
+	case SYNTAX_INTEGER:
+		return "int"
+	case SYNTAX_OCTETSTRING:
+		return "octets"
+	case SYNTAX_NULL:
+		return "null"
+	case SYNTAX_OID:
+		return "oid"
+	case SYNTAX_SEQUENCE:
+		return "sequence"
+	case SYNTAX_IPADDRESS:
+		return "ip"
+	case SYNTAX_COUNTER32:
+		return "counter32"
+	case SYNTAX_GAUGE32:
+		return "gauge32"
+	case SYNTAX_TIMETICKS:
+		return "timeticks"
+	case SYNTAX_OPAQUE:
+		return "opaque"
+	case SYNTAX_COUNTER64:
+		return "counter64"
+	case SYNTAX_NOSUCHOBJECT:
+		return "NOSUCHOBJECT"
+	case SYNTAX_NOSUCHINSTANCE:
+		return "NOSUCHINSTANCE"
+	case SYNTAX_ENDOFMIBVIEW:
+		return "ENDOFMIBVIEW"
+	default:
+		return strconv.FormatInt(int64(t), 10)
+	}
+}
 
 type reportStatusOid string
 

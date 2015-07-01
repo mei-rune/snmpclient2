@@ -38,22 +38,22 @@ func TestVarBind(t *testing.T) {
 
 	v.Variable = snmpclient2.NewInteger(-2147483648)
 	testVarBind(t, &v,
-		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "Integer", "Value": "-2147483648"}}`)
+		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "int", "Value": "-2147483648"}}`)
 
 	v.Variable = snmpclient2.NewOctetString([]byte("MyHost"))
 	testVarBind(t, &v,
-		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "OctetString", "Value": "MyHost"}}`)
+		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "MyHost"}}`)
 
 	v.Variable = snmpclient2.NewNull()
-	testVarBind(t, &v, `{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "Null", "Value": ""}}`)
+	testVarBind(t, &v, `{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "null", "Value": ""}}`)
 
 	v.Variable = snmpclient2.NewCounter32(uint32(4294967295))
 	testVarBind(t, &v,
-		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "Counter32", "Value": "4294967295"}}`)
+		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "counter32", "Value": "4294967295"}}`)
 
 	v.Variable = snmpclient2.NewCounter64(uint64(18446744073709551615))
 	testVarBind(t, &v, `{"Oid": "1.3.6.1.2.1.1.1.0", `+
-		`"Variable": {"Type": "Counter64", "Value": "18446744073709551615"}}`)
+		`"Variable": {"Type": "counter64", "Value": "18446744073709551615"}}`)
 
 	expBuf := []byte{0x30, 0x00}
 	v = snmpclient2.VarBind{}
@@ -213,9 +213,9 @@ func TestPduV1(t *testing.T) {
 
 	expStr := `{"Type": "GetRequest", "RequestId": "123", ` +
 		`"ErrorStatus": "TooBig", "ErrorIndex": "2", "VarBinds": [` +
-		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "OctetString", "Value": "MyHost"}}, ` +
-		`{"Oid": "1.3.6.1.2.1.1.2.0", "Variable": {"Type": "Null", "Value": ""}}, ` +
-		`{"Oid": "1.3.6.1.2.1.1.3.0", "Variable": {"Type": "TimeTicks", "Value": "11111"}}]}`
+		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "MyHost"}}, ` +
+		`{"Oid": "1.3.6.1.2.1.1.2.0", "Variable": {"Type": "null", "Value": ""}}, ` +
+		`{"Oid": "1.3.6.1.2.1.1.3.0", "Variable": {"Type": "timeticks", "Value": "11111"}}]}`
 	var w snmpclient2.PduV1
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
@@ -266,9 +266,9 @@ func TestScopedPdu(t *testing.T) {
 		`"ErrorStatus": "TooBig", "ErrorIndex": "2", ` +
 		`"ContextEngineId": "8001020304050607", "ContextName": "MyContext", ` +
 		`"VarBinds": [` +
-		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "OctetString", "Value": "MyHost"}}, ` +
-		`{"Oid": "1.3.6.1.2.1.1.2.0", "Variable": {"Type": "Null", "Value": ""}}, ` +
-		`{"Oid": "1.3.6.1.2.1.1.3.0", "Variable": {"Type": "TimeTicks", "Value": "11111"}}]}`
+		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "MyHost"}}, ` +
+		`{"Oid": "1.3.6.1.2.1.1.2.0", "Variable": {"Type": "null", "Value": ""}}, ` +
+		`{"Oid": "1.3.6.1.2.1.1.3.0", "Variable": {"Type": "timeticks", "Value": "11111"}}]}`
 	var w snmpclient2.ScopedPdu
 	rest, err := (&w).Unmarshal(buf)
 	if len(rest) != 0 || err != nil {
