@@ -7,8 +7,8 @@ import (
 	"github.com/runner-mei/snmpclient2"
 )
 
-func testVarBind(t *testing.T, v *snmpclient2.VarBind, expStr string) {
-	var w snmpclient2.VarBind
+func testVarBind(t *testing.T, v *snmpclient2.VariableBinding, expStr string) {
+	var w snmpclient2.VariableBinding
 	buf, err := v.Marshal()
 	if err != nil {
 		t.Errorf("Marshal() : %v", err)
@@ -32,9 +32,9 @@ func testVarBind(t *testing.T, v *snmpclient2.VarBind, expStr string) {
 }
 
 func TestVarBind(t *testing.T) {
-	var v snmpclient2.VarBind
+	var v snmpclient2.VariableBinding
 	oid, _ := snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
-	v = snmpclient2.VarBind{Oid: oid}
+	v = snmpclient2.VariableBinding{Oid: oid}
 
 	v.Variable = snmpclient2.NewInteger(-2147483648)
 	testVarBind(t, &v,
@@ -56,7 +56,7 @@ func TestVarBind(t *testing.T) {
 		`"Variable": {"Type": "counter64", "Value": "18446744073709551615"}}`)
 
 	expBuf := []byte{0x30, 0x00}
-	v = snmpclient2.VarBind{}
+	v = snmpclient2.VariableBinding{}
 	buf, err := v.Marshal()
 	if err != nil {
 		t.Errorf("Marshal() : %v", err)
@@ -74,7 +74,7 @@ func TestVarBind(t *testing.T) {
 }
 
 func TestVarBinds(t *testing.T) {
-	var v snmpclient2.VarBinds
+	var v snmpclient2.VariableBindings
 
 	oid, _ := snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
 	v = append(v, snmpclient2.NewVarBind(oid, snmpclient2.NewOctetString([]byte("MyHost"))))
@@ -84,41 +84,41 @@ func TestVarBinds(t *testing.T) {
 	v = append(v, snmpclient2.NewVarBind(oid, snmpclient2.NewTimeTicks(uint32(11111))))
 
 	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
-	varBind := v.MatchOid(oid)
-	if varBind == nil || !varBind.Oid.Equal(oid) {
+	VariableBinding := v.MatchOid(oid)
+	if VariableBinding == nil || !VariableBinding.Oid.Equal(oid) {
 		t.Errorf("Failed to MatchOid()")
 	}
 	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.1.1")
-	varBind = v.MatchOid(oid)
-	if varBind != nil {
+	VariableBinding = v.MatchOid(oid)
+	if VariableBinding != nil {
 		t.Errorf("Failed to MatchOid() - no match")
 	}
-	varBind = v.MatchOid(nil)
-	if varBind != nil {
+	VariableBinding = v.MatchOid(nil)
+	if VariableBinding != nil {
 		t.Errorf("Failed to MatchOid() - nil")
 	}
 
 	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1")
-	varBinds := v.MatchBaseOids(oid)
-	if len(varBinds) != 3 {
+	VariableBindings := v.MatchBaseOids(oid)
+	if len(VariableBindings) != 3 {
 		t.Errorf("Failed to MatchBaseOids()")
 	}
 	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
-	varBinds = v.MatchBaseOids(oid)
-	if len(varBinds) != 1 || !varBinds[0].Oid.Equal(oid) {
+	VariableBindings = v.MatchBaseOids(oid)
+	if len(VariableBindings) != 1 || !VariableBindings[0].Oid.Equal(oid) {
 		t.Errorf("Failed to MatchBaseOids() - one")
 	}
 	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.1.1")
-	varBinds = v.MatchBaseOids(oid)
-	if len(varBinds) != 0 {
+	VariableBindings = v.MatchBaseOids(oid)
+	if len(VariableBindings) != 0 {
 		t.Errorf("Failed to MatchBaseOids() - no match")
 	}
-	varBinds = v.MatchBaseOids(nil)
-	if len(varBinds) != 0 {
+	VariableBindings = v.MatchBaseOids(nil)
+	if len(VariableBindings) != 0 {
 		t.Errorf("Failed to MatchBaseOids() - nil")
 	}
 
-	var w snmpclient2.VarBinds
+	var w snmpclient2.VariableBindings
 	for _, o := range []string{
 		"1.3.6.1.2.1.1.2.0",
 		"1.3.6.1.2.1.1.1.0",
@@ -212,7 +212,7 @@ func TestPduV1(t *testing.T) {
 	}
 
 	expStr := `{"Type": "GetRequest", "RequestId": "123", ` +
-		`"ErrorStatus": "TooBig", "ErrorIndex": "2", "VarBinds": [` +
+		`"ErrorStatus": "TooBig", "ErrorIndex": "2", "VariableBindings": [` +
 		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "MyHost"}}, ` +
 		`{"Oid": "1.3.6.1.2.1.1.2.0", "Variable": {"Type": "null", "Value": ""}}, ` +
 		`{"Oid": "1.3.6.1.2.1.1.3.0", "Variable": {"Type": "timeticks", "Value": "11111"}}]}`
@@ -265,7 +265,7 @@ func TestScopedPdu(t *testing.T) {
 	expStr := `{"Type": "GetRequest", "RequestId": "123", ` +
 		`"ErrorStatus": "TooBig", "ErrorIndex": "2", ` +
 		`"ContextEngineId": "8001020304050607", "ContextName": "MyContext", ` +
-		`"VarBinds": [` +
+		`"VariableBindings": [` +
 		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "MyHost"}}, ` +
 		`{"Oid": "1.3.6.1.2.1.1.2.0", "Variable": {"Type": "null", "Value": ""}}, ` +
 		`{"Oid": "1.3.6.1.2.1.1.3.0", "Variable": {"Type": "timeticks", "Value": "11111"}}]}`

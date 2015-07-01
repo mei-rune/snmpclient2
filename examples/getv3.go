@@ -53,9 +53,9 @@ func main() {
 		fmt.Println(pdu.ErrorStatus(), pdu.ErrorIndex())
 	}
 
-	// get VarBind list
-	fmt.Println(pdu.VarBinds())
+	// get VariableBinding list
+	fmt.Println(pdu.VariableBindings())
 
-	// select a VarBind
-	fmt.Println(pdu.VarBinds().MatchOid(oids[0]))
+	// select a VariableBinding
+	fmt.Println(pdu.VariableBindings().MatchOid(oids[0]))
 }

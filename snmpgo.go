@@ -212,10 +212,10 @@ func (s *SNMP) GetBulkRequest(oids Oids, nonRepeaters, maxRepetitions int) (resu
 }
 
 // This method inquire about OID subtrees by repeatedly using GetBulkRequest.
-// Returned PDU contains the varbind list of all subtrees.
+// Returned PDU contains the VariableBinding list of all subtrees.
 // however, if the ErrorStatus of PDU is not the NoError, return only the last query result.
 func (s *SNMP) GetBulkWalk(oids Oids, nonRepeaters, maxRepetitions int) (result PDU, err error) {
-	var nonRepBinds, resBinds VarBinds
+	var nonRepBinds, resBinds VariableBindings
 
 	oids = append(oids[:nonRepeaters], oids[nonRepeaters:].Sort().UniqBase()...)
 	reqOids := make(Oids, len(oids))
@@ -231,21 +231,21 @@ func (s *SNMP) GetBulkWalk(oids Oids, nonRepeaters, maxRepetitions int) (result 
 			return pdu, nil
 		}
 
-		varBinds := pdu.VarBinds()
+		VariableBindings := pdu.VariableBindings()
 
 		if nonRepeaters > 0 {
-			nonRepBinds = append(nonRepBinds, varBinds[:nonRepeaters]...)
-			varBinds = varBinds[nonRepeaters:]
+			nonRepBinds = append(nonRepBinds, VariableBindings[:nonRepeaters]...)
+			VariableBindings = VariableBindings[nonRepeaters:]
 			oids = oids[nonRepeaters:]
 			reqOids = reqOids[nonRepeaters:]
 			nonRepeaters = 0
 		}
 
-		filled := len(varBinds) == len(reqOids)*maxRepetitions
-		varBinds = varBinds.Sort().Uniq()
+		filled := len(VariableBindings) == len(reqOids)*maxRepetitions
+		VariableBindings = VariableBindings.Sort().Uniq()
 
 		for i, _ := range reqOids {
-			matched := varBinds.MatchBaseOids(oids[i])
+			matched := VariableBindings.MatchBaseOids(oids[i])
 			mLength := len(matched)
 
 			if mLength == 0 || resBinds.MatchOid(matched[mLength-1].Oid) != nil {
@@ -282,15 +282,15 @@ func (s *SNMP) GetBulkWalk(oids Oids, nonRepeaters, maxRepetitions int) (result 
 	return NewPduWithVarBinds(s.args.Version, GetResponse, resBinds), nil
 }
 
-func (s *SNMP) V2Trap(varBinds VarBinds) error {
-	return s.v2trap(SNMPTrapV2, varBinds)
+func (s *SNMP) V2Trap(VariableBindings VariableBindings) error {
+	return s.v2trap(SNMPTrapV2, VariableBindings)
 }
 
-func (s *SNMP) InformRequest(varBinds VarBinds) error {
-	return s.v2trap(InformRequest, varBinds)
+func (s *SNMP) InformRequest(VariableBindings VariableBindings) error {
+	return s.v2trap(InformRequest, VariableBindings)
 }
 
-func (s *SNMP) v2trap(pduType PduType, varBinds VarBinds) (err error) {
+func (s *SNMP) v2trap(pduType PduType, VariableBindings VariableBindings) (err error) {
 	if s.args.Version < V2c {
 		return ArgumentError{
 			Value:   s.args.Version,
@@ -298,7 +298,7 @@ func (s *SNMP) v2trap(pduType PduType, varBinds VarBinds) (err error) {
 		}
 	}
 
-	pdu := NewPduWithVarBinds(s.args.Version, pduType, varBinds)
+	pdu := NewPduWithVarBinds(s.args.Version, pduType, VariableBindings)
 
 	retry(int(s.args.Retries), func() error {
 		_, err = s.sendPdu(pdu)
@@ -342,7 +342,7 @@ func (s *SNMP) sendPdu(pdu PDU) (result PDU, err error) {
 	}
 
 	result, err = s.mp.PrepareDataElements(s, sendMsg, buf)
-	if result != nil && len(pdu.VarBinds()) != 0 {
+	if result != nil && len(pdu.VariableBindings()) != 0 {
 		if err = s.checkPdu(result); err != nil {
 			result = nil
 		}
@@ -351,9 +351,9 @@ func (s *SNMP) sendPdu(pdu PDU) (result PDU, err error) {
 }
 
 func (s *SNMP) checkPdu(pdu PDU) (err error) {
-	varBinds := pdu.VarBinds()
-	if s.args.Version == V3 && pdu.PduType() == Report && len(varBinds) > 0 {
-		oid := varBinds[0].Oid.ToString()
+	VariableBindings := pdu.VariableBindings()
+	if s.args.Version == V3 && pdu.PduType() == Report && len(VariableBindings) > 0 {
+		oid := VariableBindings[0].Oid.ToString()
 		rep := reportStatusOid(oid)
 		err = ResponseError{
 			Message: fmt.Sprintf("Received a report from the agent - %s(%s)", rep, oid),

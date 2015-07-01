@@ -177,17 +177,17 @@ func buildVariable(kind string, value string) (val snmpgo.Variable, err error) {
 	return
 }
 
-func buildVarBinds(cmdArgs []string) (snmpgo.VarBinds, error) {
-	var varBinds snmpgo.VarBinds
+func buildVarBinds(cmdArgs []string) (snmpgo.VariableBindings, error) {
+	var VariableBindings snmpgo.VariableBindings
 
 	uptime := snmpgo.NewTimeTicks(getUptime(cmdArgs[1]))
-	varBinds = append(varBinds, snmpgo.NewVarBind(snmpgo.OidSysUpTime, uptime))
+	VariableBindings = append(VariableBindings, snmpgo.NewVarBind(snmpgo.OidSysUpTime, uptime))
 
 	oid, err := snmpgo.NewOid(cmdArgs[2])
 	if err != nil {
 		return nil, err
 	}
-	varBinds = append(varBinds, snmpgo.NewVarBind(snmpgo.OidSnmpTrap, oid))
+	VariableBindings = append(VariableBindings, snmpgo.NewVarBind(snmpgo.OidSnmpTrap, oid))
 
 	for i := 3; i < len(cmdArgs); i += 3 {
 		oid, err := snmpgo.NewOid(cmdArgs[i])
@@ -200,10 +200,10 @@ func buildVarBinds(cmdArgs []string) (snmpgo.VarBinds, error) {
 			return nil, err
 		}
 
-		varBinds = append(varBinds, snmpgo.NewVarBind(oid, val))
+		VariableBindings = append(VariableBindings, snmpgo.NewVarBind(oid, val))
 	}
 
-	return varBinds, nil
+	return VariableBindings, nil
 }
 
 func main() {
@@ -214,7 +214,7 @@ func main() {
 		usage(fmt.Sprintf("%s: missing TYPE/VALUE for variable", cmdArgs[l/3*3]), 2)
 	}
 
-	varBinds, err := buildVarBinds(cmdArgs)
+	VariableBindings, err := buildVarBinds(cmdArgs)
 	if err != nil {
 		usage(err.Error(), 2)
 	}
@@ -230,9 +230,9 @@ func main() {
 	defer snmp.Close()
 
 	if inform {
-		err = snmp.InformRequest(varBinds)
+		err = snmp.InformRequest(VariableBindings)
 	} else {
-		err = snmp.V2Trap(varBinds)
+		err = snmp.V2Trap(VariableBindings)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

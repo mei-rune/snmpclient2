@@ -75,18 +75,18 @@ func main() {
         fmt.Println(pdu.ErrorStatus(), pdu.ErrorIndex())
     }
 
-    // get VarBind list
-    fmt.Println(pdu.VarBinds())
+    // get VariableBinding list
+    fmt.Println(pdu.VariableBindings())
 
-    // select a VarBind
-    fmt.Println(pdu.VarBinds().MatchOid(oids[0]))
+    // select a VariableBinding
+    fmt.Println(pdu.VariableBindings().MatchOid(oids[0]))
 }
 ```
 
 **[trapv2.go](examples/trapv2.go), [trapv3.go](examples/trapv3.go)**
 
 Example for sending a V2Trap.
-Explain how to build varbinds using API.
+Explain how to build VariableBindings using API.
 
 **[multiget.go](examples/multiget.go)**
 

@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-type VarBind struct {
+type VariableBinding struct {
 	Oid      *Oid
 	Variable Variable
 }
 
-func (v *VarBind) Marshal() (b []byte, err error) {
+func (v *VariableBinding) Marshal() (b []byte, err error) {
 	var buf []byte
 	raw := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
 
@@ -35,7 +35,7 @@ func (v *VarBind) Marshal() (b []byte, err error) {
 	return asn1.Marshal(raw)
 }
 
-func (v *VarBind) Unmarshal(b []byte) (rest []byte, err error) {
+func (v *VariableBinding) Unmarshal(b []byte) (rest []byte, err error) {
 	var raw asn1.RawValue
 	rest, err = asn1.Unmarshal(b, &raw)
 	if err != nil {
@@ -43,7 +43,7 @@ func (v *VarBind) Unmarshal(b []byte) (rest []byte, err error) {
 	}
 	if raw.Class != ClassUniversal || raw.Tag != SYNTAX_SEQUENCE || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
-			"Invalid VarBind object - Class [%02x], Tag [%02x] : [%s]",
+			"Invalid VariableBinding object - Class [%02x], Tag [%02x] : [%s]",
 			raw.Class, raw.Tag, ToHexStr(b, " "))}
 	}
 
@@ -63,7 +63,7 @@ func (v *VarBind) Unmarshal(b []byte) (rest []byte, err error) {
 	return
 }
 
-func (v *VarBind) String() string {
+func (v *VariableBinding) String() string {
 	var oid, vtype, value string
 	if v.Oid != nil {
 		oid = v.Oid.ToString()
@@ -76,17 +76,17 @@ func (v *VarBind) String() string {
 		oid, vtype, value)
 }
 
-func NewVarBind(oid *Oid, val Variable) *VarBind {
-	return &VarBind{
+func NewVarBind(oid *Oid, val Variable) *VariableBinding {
+	return &VariableBinding{
 		Oid:      oid,
 		Variable: val,
 	}
 }
 
-type VarBinds []*VarBind
+type VariableBindings []*VariableBinding
 
-// Gets a VarBind that matches
-func (v VarBinds) MatchOid(oid *Oid) *VarBind {
+// Gets a VariableBinding that matches
+func (v VariableBindings) MatchOid(oid *Oid) *VariableBinding {
 	for _, o := range v {
 		if o.Oid != nil && o.Oid.Equal(oid) {
 			return o
@@ -95,9 +95,9 @@ func (v VarBinds) MatchOid(oid *Oid) *VarBind {
 	return nil
 }
 
-// Gets a VarBind list that matches the prefix
-func (v VarBinds) MatchBaseOids(prefix *Oid) VarBinds {
-	result := make(VarBinds, 0)
+// Gets a VariableBinding list that matches the prefix
+func (v VariableBindings) MatchBaseOids(prefix *Oid) VariableBindings {
+	result := make(VariableBindings, 0)
 	for _, o := range v {
 		if o.Oid != nil && o.Oid.Contains(prefix) {
 			result = append(result, o)
@@ -106,17 +106,17 @@ func (v VarBinds) MatchBaseOids(prefix *Oid) VarBinds {
 	return result
 }
 
-// Sort a VarBind list by OID
-func (v VarBinds) Sort() VarBinds {
-	c := make(VarBinds, len(v))
+// Sort a VariableBinding list by OID
+func (v VariableBindings) Sort() VariableBindings {
+	c := make(VariableBindings, len(v))
 	copy(c, v)
 	sort.Sort(sortableVarBinds{c})
 	return c
 }
 
-func (v VarBinds) uniq(comp func(a, b *VarBind) bool) VarBinds {
-	var before *VarBind
-	c := make(VarBinds, 0, len(v))
+func (v VariableBindings) uniq(comp func(a, b *VariableBinding) bool) VariableBindings {
+	var before *VariableBinding
+	c := make(VariableBindings, 0, len(v))
 	for _, val := range v {
 		if !comp(before, val) {
 			before = val
@@ -126,9 +126,9 @@ func (v VarBinds) uniq(comp func(a, b *VarBind) bool) VarBinds {
 	return c
 }
 
-// Filter out adjacent VarBind list
-func (v VarBinds) Uniq() VarBinds {
-	return v.uniq(func(a, b *VarBind) bool {
+// Filter out adjacent VariableBinding list
+func (v VariableBindings) Uniq() VariableBindings {
+	return v.uniq(func(a, b *VariableBinding) bool {
 		if b == nil {
 			return a == nil
 		} else if b.Oid == nil {
@@ -139,29 +139,29 @@ func (v VarBinds) Uniq() VarBinds {
 	})
 }
 
-func (v VarBinds) String() string {
-	varBinds := make([]string, len(v))
+func (v VariableBindings) String() string {
+	VariableBindings := make([]string, len(v))
 	for i, o := range v {
-		varBinds[i] = o.String()
+		VariableBindings[i] = o.String()
 	}
-	return "[" + strings.Join(varBinds, ", ") + "]"
+	return "[" + strings.Join(VariableBindings, ", ") + "]"
 }
 
 type sortableVarBinds struct {
-	VarBinds
+	VariableBindings
 }
 
 func (v sortableVarBinds) Len() int {
-	return len(v.VarBinds)
+	return len(v.VariableBindings)
 }
 
 func (v sortableVarBinds) Swap(i, j int) {
-	v.VarBinds[i], v.VarBinds[j] = v.VarBinds[j], v.VarBinds[i]
+	v.VariableBindings[i], v.VariableBindings[j] = v.VariableBindings[j], v.VariableBindings[i]
 }
 
 func (v sortableVarBinds) Less(i, j int) bool {
-	t := v.VarBinds[i]
-	return t != nil && t.Oid != nil && t.Oid.Compare(v.VarBinds[j].Oid) < 1
+	t := v.VariableBindings[i]
+	return t != nil && t.Oid != nil && t.Oid.Compare(v.VariableBindings[j].Oid) < 1
 }
 
 // The protocol data unit of SNMP
@@ -176,7 +176,7 @@ type PDU interface {
 	SetNonrepeaters(int)
 	SetMaxRepetitions(int)
 	AppendVarBind(*Oid, Variable)
-	VarBinds() VarBinds
+	VariableBindings() VariableBindings
 	Marshal() ([]byte, error)
 	Unmarshal([]byte) (rest []byte, err error)
 	String() string
@@ -184,11 +184,11 @@ type PDU interface {
 
 // The PduV1 is used by SNMP V1 and V2c, other than the SNMP V1 Trap
 type PduV1 struct {
-	pduType     PduType
-	requestId   int
-	errorStatus ErrorStatus
-	errorIndex  int
-	varBinds    VarBinds
+	pduType          PduType
+	requestId        int
+	errorStatus      ErrorStatus
+	errorIndex       int
+	variableBindings VariableBindings
 }
 
 func (pdu *PduV1) PduType() PduType {
@@ -232,14 +232,14 @@ func (pdu *PduV1) AppendVarBind(oid *Oid, variable Variable) {
 		variable = NewNull()
 	}
 
-	pdu.varBinds = append(pdu.varBinds, &VarBind{
+	pdu.variableBindings = append(pdu.variableBindings, &VariableBinding{
 		Oid:      oid,
 		Variable: variable,
 	})
 }
 
-func (pdu *PduV1) VarBinds() VarBinds {
-	return pdu.varBinds
+func (pdu *PduV1) VariableBindings() VariableBindings {
+	return pdu.variableBindings
 }
 
 func (pdu *PduV1) Marshal() (b []byte, err error) {
@@ -264,16 +264,16 @@ func (pdu *PduV1) Marshal() (b []byte, err error) {
 	}
 	raw.Bytes = append(raw.Bytes, buf...)
 
-	varBinds := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
-	for i := 0; i < len(pdu.varBinds); i++ {
-		buf, err = pdu.varBinds[i].Marshal()
+	VariableBindings := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
+	for i := 0; i < len(pdu.variableBindings); i++ {
+		buf, err = pdu.variableBindings[i].Marshal()
 		if err != nil {
 			return
 		}
-		varBinds.Bytes = append(varBinds.Bytes, buf...)
+		VariableBindings.Bytes = append(VariableBindings.Bytes, buf...)
 	}
 
-	buf, err = asn1.Marshal(varBinds)
+	buf, err = asn1.Marshal(VariableBindings)
 	if err != nil {
 		return
 	}
@@ -314,25 +314,25 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 		return
 	}
 
-	var varBinds asn1.RawValue
-	_, err = asn1.Unmarshal(next, &varBinds)
+	var VariableBindings asn1.RawValue
+	_, err = asn1.Unmarshal(next, &VariableBindings)
 	if err != nil {
 		return
 	}
-	if varBinds.Class != ClassUniversal || varBinds.Tag != SYNTAX_SEQUENCE || !varBinds.IsCompound {
+	if VariableBindings.Class != ClassUniversal || VariableBindings.Tag != SYNTAX_SEQUENCE || !VariableBindings.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
-			"Invalid VarBinds object - Class [%02x], Tag [%02x] : [%s]",
-			varBinds.Class, varBinds.Tag, ToHexStr(next, " "))}
+			"Invalid VariableBindings object - Class [%02x], Tag [%02x] : [%s]",
+			VariableBindings.Class, VariableBindings.Tag, ToHexStr(next, " "))}
 	}
 
-	next = varBinds.Bytes
+	next = VariableBindings.Bytes
 	for len(next) > 0 {
-		var varBind VarBind
-		next, err = (&varBind).Unmarshal(next)
+		var VariableBinding VariableBinding
+		next, err = (&VariableBinding).Unmarshal(next)
 		if err != nil {
 			return
 		}
-		pdu.varBinds = append(pdu.varBinds, &varBind)
+		pdu.variableBindings = append(pdu.variableBindings, &VariableBinding)
 	}
 
 	pdu.pduType = PduType(raw.Tag)
@@ -345,9 +345,9 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 func (pdu *PduV1) String() string {
 	return fmt.Sprintf(
 		`{"Type": "%s", "RequestId": "%d", "ErrorStatus": "%s", `+
-			`"ErrorIndex": "%d", "VarBinds": %s}`,
+			`"ErrorIndex": "%d", "VariableBindings": %s}`,
 		pdu.pduType, pdu.requestId, pdu.errorStatus, pdu.errorIndex,
-		pdu.varBinds.String())
+		pdu.variableBindings.String())
 }
 
 // The ScopedPdu is used by SNMP V3.
@@ -424,10 +424,10 @@ func (pdu *ScopedPdu) Unmarshal(b []byte) (rest []byte, err error) {
 func (pdu *ScopedPdu) String() string {
 	return fmt.Sprintf(
 		`{"Type": "%s", "RequestId": "%d", "ErrorStatus": "%s", "ErrorIndex": "%d", `+
-			`"ContextEngineId": "%s", "ContextName": %s, "VarBinds": %s}`,
+			`"ContextEngineId": "%s", "ContextName": %s, "VariableBindings": %s}`,
 		pdu.pduType, pdu.requestId, pdu.errorStatus, pdu.errorIndex,
 		ToHexStr(pdu.ContextEngineId, ""), escape(string(pdu.ContextName)),
-		pdu.varBinds.String())
+		pdu.variableBindings.String())
 }
 
 func NewPdu(ver SnmpVersion, t PduType) (pdu PDU) {
@@ -449,9 +449,9 @@ func NewPduWithOids(ver SnmpVersion, t PduType, oids Oids) (pdu PDU) {
 	return
 }
 
-func NewPduWithVarBinds(ver SnmpVersion, t PduType, varBinds VarBinds) (pdu PDU) {
+func NewPduWithVarBinds(ver SnmpVersion, t PduType, VariableBindings VariableBindings) (pdu PDU) {
 	pdu = NewPdu(ver, t)
-	for _, v := range varBinds {
+	for _, v := range VariableBindings {
 		pdu.AppendVarBind(v.Oid, v.Variable)
 	}
 	return

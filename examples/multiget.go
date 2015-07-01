@@ -37,7 +37,7 @@ func get(agent string, oids snmpgo.Oids) {
 			agent, pdu.ErrorStatus(), pdu.ErrorIndex())
 	}
 
-	fmt.Printf("[%s] : %s\n", agent, pdu.VarBinds())
+	fmt.Printf("[%s] : %s\n", agent, pdu.VariableBindings())
 }
 
 func main() {

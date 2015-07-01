@@ -121,7 +121,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, val := range pdu.VarBinds() {
+	for _, val := range pdu.VariableBindings() {
 		fmt.Printf("%s = %s: %s\n", val.Oid, val.Variable.Type(), val.Variable)
 	}
 }

@@ -146,18 +146,18 @@ func getIfInfo(snmp *snmpgo.SNMP) (*ifInfo, error) {
 	}
 
 	info := newIfInfo()
-	if descrs := pdu.VarBinds().MatchBaseOids(sysDescr); len(descrs) > 0 {
+	if descrs := pdu.VariableBindings().MatchBaseOids(sysDescr); len(descrs) > 0 {
 		info.descr = descrs[0].Variable.String()
 	}
 
 	ifNameDepth := len(ifName.Value)
-	for _, varBind := range pdu.VarBinds().MatchBaseOids(ifName) {
+	for _, VariableBinding := range pdu.VariableBindings().MatchBaseOids(ifName) {
 		// get interface number and name
-		if len(varBind.Oid.Value) != ifNameDepth+1 {
+		if len(VariableBinding.Oid.Value) != ifNameDepth+1 {
 			continue
 		}
-		ifNum := varBind.Oid.Value[ifNameDepth]
-		ifName := varBind.Variable.String()
+		ifNum := VariableBinding.Oid.Value[ifNameDepth]
+		ifName := VariableBinding.Variable.String()
 
 		if ifRegexp != nil && !ifRegexp.MatchString(ifName) {
 			continue
@@ -170,7 +170,7 @@ func getIfInfo(snmp *snmpgo.SNMP) (*ifInfo, error) {
 		}
 
 		// check admin status("1" is up)
-		if adms := pdu.VarBinds().MatchOid(oid); adms == nil || adms.Variable.String() != "1" {
+		if adms := pdu.VariableBindings().MatchOid(oid); adms == nil || adms.Variable.String() != "1" {
 			continue
 		}
 
@@ -205,7 +205,7 @@ func getIfTraffic(snmp *snmpgo.SNMP, info *ifInfo) error {
 		if err != nil {
 			return err
 		}
-		if in := pdu.VarBinds().MatchOid(oid); in != nil {
+		if in := pdu.VariableBindings().MatchOid(oid); in != nil {
 			count, err := in.Variable.BigInt()
 			if err != nil {
 				return err
@@ -219,7 +219,7 @@ func getIfTraffic(snmp *snmpgo.SNMP, info *ifInfo) error {
 		if err != nil {
 			return err
 		}
-		if out := pdu.VarBinds().MatchOid(oid); out != nil {
+		if out := pdu.VariableBindings().MatchOid(oid); out != nil {
 			count, err := out.Variable.BigInt()
 			if err != nil {
 				return err
