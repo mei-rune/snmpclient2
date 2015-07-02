@@ -146,7 +146,7 @@ func buildVariable(kind string, value string) (val snmpgo.Variable, err error) {
 			return nil, fmt.Errorf("%s: no valid IP Address", value)
 		}
 	case "o":
-		val, err = snmpgo.NewOid(value)
+		val, err = snmpgo.ParseOidFromString(value)
 	case "n":
 		val = snmpgo.NewNull()
 	case "s":
@@ -183,14 +183,14 @@ func buildVarBinds(cmdArgs []string) (snmpgo.VariableBindings, error) {
 	uptime := snmpgo.NewTimeTicks(getUptime(cmdArgs[1]))
 	VariableBindings = append(VariableBindings, snmpgo.NewVarBind(snmpgo.OidSysUpTime, uptime))
 
-	oid, err := snmpgo.NewOid(cmdArgs[2])
+	oid, err := snmpgo.ParseOidFromString(cmdArgs[2])
 	if err != nil {
 		return nil, err
 	}
 	VariableBindings = append(VariableBindings, snmpgo.NewVarBind(snmpgo.OidSnmpTrap, oid))
 
 	for i := 3; i < len(cmdArgs); i += 3 {
-		oid, err := snmpgo.NewOid(cmdArgs[i])
+		oid, err := snmpgo.ParseOidFromString(cmdArgs[i])
 		if err != nil {
 			return nil, err
 		}

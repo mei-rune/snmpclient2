@@ -13,11 +13,11 @@ import (
 	"github.com/k-sone/snmpgo"
 )
 
-var sysDescr *snmpgo.Oid = snmpgo.MustNewOid("1.3.6.1.2.1.1.1")
-var ifAdminStatus *snmpgo.Oid = snmpgo.MustNewOid("1.3.6.1.2.1.2.2.1.7")
-var ifName *snmpgo.Oid = snmpgo.MustNewOid("1.3.6.1.2.1.31.1.1.1.1")
-var ifHCInOctets *snmpgo.Oid = snmpgo.MustNewOid("1.3.6.1.2.1.31.1.1.1.6")
-var ifHCOutOctets *snmpgo.Oid = snmpgo.MustNewOid("1.3.6.1.2.1.31.1.1.1.10")
+var sysDescr *snmpgo.Oid = snmpgo.MustParseOidFromString("1.3.6.1.2.1.1.1")
+var ifAdminStatus *snmpgo.Oid = snmpgo.MustParseOidFromString("1.3.6.1.2.1.2.2.1.7")
+var ifName *snmpgo.Oid = snmpgo.MustParseOidFromString("1.3.6.1.2.1.31.1.1.1.1")
+var ifHCInOctets *snmpgo.Oid = snmpgo.MustParseOidFromString("1.3.6.1.2.1.31.1.1.1.6")
+var ifHCOutOctets *snmpgo.Oid = snmpgo.MustParseOidFromString("1.3.6.1.2.1.31.1.1.1.10")
 
 var delay time.Duration = 30 * time.Second
 var iterations int = -1

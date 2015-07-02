@@ -50,7 +50,7 @@ func NewVariable(s string) (Variable, error) {
 	case "opaque":
 		return NewOpaqueFromString(ss[1])
 	case "oid":
-		return NewOidFromString(ss[1])
+		return ParseOidFromString(ss[1])
 	case "ip", "ipaddress":
 		return NewIPAddressFromString(ss[1])
 	case "timeticks":
@@ -386,8 +386,8 @@ func ParseOidFromString(s string) (*Oid, error) {
 	return &Oid{asn1.ObjectIdentifier(result)}, nil
 }
 
-func NewOid(s string) (*Oid, error) {
-	return ParseOidFromString(s)
+func NewOid(oid []int) *Oid {
+	return &Oid{asn1.ObjectIdentifier(oid)}
 }
 
 func NewOidFromString(s string) (Variable, error) {
@@ -399,7 +399,7 @@ func NewOidFromString(s string) (Variable, error) {
 }
 
 // MustNewOid is like NewOid but panics if argument cannot be parsed
-func MustNewOid(s string) *Oid {
+func MustParseOidFromString(s string) *Oid {
 	if oid, err := ParseOidFromString(s); err != nil {
 		panic(`snmpgo.MustNewOid: ` + err.Error())
 	} else {

@@ -33,7 +33,7 @@ func testVarBind(t *testing.T, v *snmpclient2.VariableBinding, expStr string) {
 
 func TestVarBind(t *testing.T) {
 	var v snmpclient2.VariableBinding
-	oid, _ := snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
+	oid, _ := snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.0")
 	v = snmpclient2.VariableBinding{Oid: oid}
 
 	v.Variable = snmpclient2.NewInteger(-2147483648)
@@ -76,19 +76,19 @@ func TestVarBind(t *testing.T) {
 func TestVarBinds(t *testing.T) {
 	var v snmpclient2.VariableBindings
 
-	oid, _ := snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
+	oid, _ := snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.0")
 	v = append(v, snmpclient2.NewVarBind(oid, snmpclient2.NewOctetString([]byte("MyHost"))))
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.2.0")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.2.0")
 	v = append(v, snmpclient2.NewVarBind(oid, snmpclient2.NewNull()))
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.3.0")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.3.0")
 	v = append(v, snmpclient2.NewVarBind(oid, snmpclient2.NewTimeTicks(uint32(11111))))
 
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.0")
 	VariableBinding := v.MatchOid(oid)
 	if VariableBinding == nil || !VariableBinding.Oid.Equal(oid) {
 		t.Errorf("Failed to MatchOid()")
 	}
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.1.1")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.1")
 	VariableBinding = v.MatchOid(oid)
 	if VariableBinding != nil {
 		t.Errorf("Failed to MatchOid() - no match")
@@ -98,17 +98,17 @@ func TestVarBinds(t *testing.T) {
 		t.Errorf("Failed to MatchOid() - nil")
 	}
 
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1")
 	VariableBindings := v.MatchBaseOids(oid)
 	if len(VariableBindings) != 3 {
 		t.Errorf("Failed to MatchBaseOids()")
 	}
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.0")
 	VariableBindings = v.MatchBaseOids(oid)
 	if len(VariableBindings) != 1 || !VariableBindings[0].Oid.Equal(oid) {
 		t.Errorf("Failed to MatchBaseOids() - one")
 	}
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.1.1")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.1")
 	VariableBindings = v.MatchBaseOids(oid)
 	if len(VariableBindings) != 0 {
 		t.Errorf("Failed to MatchBaseOids() - no match")
@@ -126,7 +126,7 @@ func TestVarBinds(t *testing.T) {
 		"1.3.6.1.2.1.1",
 		"1.3.6.1.2.1.1.1.0",
 	} {
-		oid, _ = snmpclient2.NewOid(o)
+		oid, _ = snmpclient2.ParseOidFromString(o)
 		w = append(w, snmpclient2.NewVarBind(oid, snmpclient2.NewNull()))
 	}
 
@@ -187,11 +187,11 @@ func TestPduV1(t *testing.T) {
 	pdu.SetErrorStatus(snmpclient2.TooBig)
 	pdu.SetErrorIndex(2)
 
-	oid, _ := snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
+	oid, _ := snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.0")
 	pdu.AppendVariableBinding(oid, snmpclient2.NewOctetString([]byte("MyHost")))
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.2.0")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.2.0")
 	pdu.AppendVariableBinding(oid, snmpclient2.NewNull())
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.3.0")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.3.0")
 	pdu.AppendVariableBinding(oid, snmpclient2.NewTimeTicks(uint32(11111)))
 
 	expBuf := []byte{
@@ -236,11 +236,11 @@ func TestScopedPdu(t *testing.T) {
 	sp.ContextEngineId = []byte{0x80, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}
 	sp.ContextName = []byte("MyContext")
 
-	oid, _ := snmpclient2.NewOid("1.3.6.1.2.1.1.1.0")
+	oid, _ := snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.0")
 	pdu.AppendVariableBinding(oid, snmpclient2.NewOctetString([]byte("MyHost")))
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.2.0")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.2.0")
 	pdu.AppendVariableBinding(oid, snmpclient2.NewNull())
-	oid, _ = snmpclient2.NewOid("1.3.6.1.2.1.1.3.0")
+	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.3.0")
 	pdu.AppendVariableBinding(oid, snmpclient2.NewTimeTicks(uint32(11111)))
 
 	expBuf := []byte{

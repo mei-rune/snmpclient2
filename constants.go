@@ -288,6 +288,6 @@ func (r reportStatusOid) String() string {
 }
 
 var (
-	OidSysUpTime = MustNewOid("1.3.6.1.2.1.1.3.0")
-	OidSnmpTrap  = MustNewOid("1.3.6.1.6.3.1.1.4.1.0")
+	OidSysUpTime = MustParseOidFromString("1.3.6.1.2.1.1.3.0")
+	OidSnmpTrap  = MustParseOidFromString("1.3.6.1.6.3.1.1.4.1.0")
 )

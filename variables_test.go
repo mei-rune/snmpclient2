@@ -160,7 +160,7 @@ func TestOid(t *testing.T) {
 	expBuf := []byte{0x06, 0x08, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x01, 0x00}
 	var v snmpclient2.Variable
 
-	v, err := snmpclient2.NewOid(expStr)
+	v, err := snmpclient2.ParseOidFromString(expStr)
 	if err != nil {
 		t.Errorf("NewOid : %v", err)
 	}
@@ -200,7 +200,7 @@ func TestOid(t *testing.T) {
 }
 
 func TestOidOperation(t *testing.T) {
-	oid, _ := snmpclient2.NewOid("1.2.3.4.5.6.7")
+	oid, _ := snmpclient2.ParseOidFromString("1.2.3.4.5.6.7")
 
 	oids, _ := snmpclient2.NewOids([]string{"1.2.3.4", "1.2.3.4.5.6.7",
 		"1.2.3.4.5.6.7.8", "1.1.3.4", "1.3.3.4"})
@@ -226,11 +226,11 @@ func TestOidOperation(t *testing.T) {
 	}
 }
 
-func TestNewOid(t *testing.T) {
+func TestParseOidFromString(t *testing.T) {
 	expStr := ".1.3.6.1.2.1.1.1.0"
 	var v snmpclient2.Variable
 
-	v, err := snmpclient2.NewOid(expStr)
+	v, err := snmpclient2.ParseOidFromString(expStr)
 	if err != nil {
 		t.Errorf("NewOid : %v", err)
 	}
@@ -244,37 +244,37 @@ func TestNewOid(t *testing.T) {
 		s = append(s, strconv.Itoa(i))
 	}
 	// expStr = strings.Join(s, ".")
-	// v, err = snmpclient2.NewOid(expStr)
+	// v, err = snmpclient2.ParseOidFromString(expStr)
 	// if err == nil {
 	// 	t.Errorf("NewOid sub-identifiers size")
 	// }
 
 	expStr = "1.3.6.1.2.1.-1.0"
-	v, err = snmpclient2.NewOid(expStr)
+	v, err = snmpclient2.ParseOidFromString(expStr)
 	if err == nil {
 		t.Errorf("NewOid sub-identifier range")
 	}
 
 	expStr = "1.3.6.1.2.1.4294967296.0"
-	v, err = snmpclient2.NewOid(expStr)
+	v, err = snmpclient2.ParseOidFromString(expStr)
 	if err == nil {
 		t.Errorf("NewOid sub-identifier range")
 	}
 
 	// expStr = "3.3.6.1.2.1.1.1.0"
-	// v, err = snmpclient2.NewOid(expStr)
+	// v, err = snmpclient2.ParseOidFromString(expStr)
 	// if err == nil {
 	// 	t.Errorf("NewOid first sub-identifier range")
 	// }
 
 	// expStr = "1"
-	// v, err = snmpclient2.NewOid(expStr)
+	// v, err = snmpclient2.ParseOidFromString(expStr)
 	// if err == nil {
 	// 	t.Errorf("NewOid sub-identifiers size")
 	// }
 
 	// expStr = "1.40.6.1.2.1.1.1.0"
-	// v, err = snmpclient2.NewOid(expStr)
+	// v, err = snmpclient2.ParseOidFromString(expStr)
 	// if err == nil {
 	// 	t.Errorf("NewOid first sub-identifier range")
 	// }
