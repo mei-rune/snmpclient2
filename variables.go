@@ -403,6 +403,10 @@ func MustParseOidFromString(s string) Oid {
 	}
 }
 
+func ToOidString(sub []int) string {
+	return asn1.ObjectIdentifier(sub).String()
+}
+
 type Oids []Oid
 
 // Sort a Oid list
