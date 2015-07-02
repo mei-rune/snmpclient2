@@ -233,7 +233,7 @@ func NewNull() *Null {
 }
 
 type Oid struct {
-	Value asn1.ObjectIdentifier
+	Value []int
 }
 
 func (v *Oid) IsError() bool {
@@ -253,11 +253,11 @@ func (v *Oid) Uint() uint64 {
 }
 
 func (v *Oid) ToString() string {
-	return v.Value.String()
+	return asn1.ObjectIdentifier(v.Value).String()
 }
 
 func (v *Oid) String() string {
-	return "[oid]" + v.Value.String()
+	return "[oid]" + asn1.ObjectIdentifier(v.Value).String()
 }
 
 func (v *Oid) Syntex() int {
@@ -265,14 +265,14 @@ func (v *Oid) Syntex() int {
 }
 
 func (v *Oid) Marshal() ([]byte, error) {
-	return asn1.Marshal(v.Value)
+	return asn1.Marshal(asn1.ObjectIdentifier(v.Value))
 }
 
 func (v *Oid) Unmarshal(b []byte) (rest []byte, err error) {
 	var i asn1.ObjectIdentifier
 	rest, err = asn1.Unmarshal(b, &i)
 	if err == nil {
-		v.Value = i
+		v.Value = []int(i)
 	}
 	return
 }
@@ -316,7 +316,7 @@ func (v *Oid) Equal(o *Oid) bool {
 	if o == nil {
 		return false
 	}
-	return v.Value.Equal(o.Value)
+	return asn1.ObjectIdentifier(v.Value).Equal(asn1.ObjectIdentifier(o.Value))
 }
 
 // Returns Oid with additional sub-ids
@@ -383,11 +383,11 @@ func ParseOidFromString(s string) (*Oid, error) {
 		}
 
 	}
-	return &Oid{asn1.ObjectIdentifier(result)}, nil
+	return &Oid{result}, nil
 }
 
 func NewOid(oid []int) *Oid {
-	return &Oid{asn1.ObjectIdentifier(oid)}
+	return &Oid{oid}
 }
 
 func NewOidFromString(s string) (Variable, error) {
