@@ -158,14 +158,14 @@ func TestNull(t *testing.T) {
 func TestOid(t *testing.T) {
 	expStr := "1.3.6.1.2.1.1.1.0"
 	expBuf := []byte{0x06, 0x08, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x01, 0x00}
-	var v snmpclient2.Variable
+	var v snmpclient2.Oid
 
 	v, err := snmpclient2.ParseOidFromString(expStr)
 	if err != nil {
 		t.Errorf("NewOid : %v", err)
 	}
 
-	exceptedError(t, v)
+	exceptedError(t, &v)
 
 	if expStr != v.ToString() {
 		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
@@ -205,22 +205,22 @@ func TestOidOperation(t *testing.T) {
 	oids, _ := snmpclient2.NewOids([]string{"1.2.3.4", "1.2.3.4.5.6.7",
 		"1.2.3.4.5.6.7.8", "1.1.3.4", "1.3.3.4"})
 
-	if !oid.Contains(oids[0]) || !oid.Contains(oids[1]) || oid.Contains(oids[2]) ||
-		oid.Contains(oids[3]) || oid.Contains(oids[4]) {
+	if !oid.Contains(&oids[0]) || !oid.Contains(&oids[1]) || oid.Contains(&oids[2]) ||
+		oid.Contains(&oids[3]) || oid.Contains(&oids[4]) {
 		t.Errorf("Failed to Contains()")
 	}
 
-	if oid.Compare(oids[0]) != 1 || oid.Compare(oids[1]) != 0 || oid.Compare(oids[2]) != -1 ||
-		oid.Compare(oids[3]) != 1 || oid.Compare(oids[4]) != -1 {
+	if oid.Compare(&oids[0]) != 1 || oid.Compare(&oids[1]) != 0 || oid.Compare(&oids[2]) != -1 ||
+		oid.Compare(&oids[3]) != 1 || oid.Compare(&oids[4]) != -1 {
 		t.Errorf("Failed to Compare()")
 	}
 
-	if oid.Equal(oids[0]) || !oid.Equal(oids[1]) || oid.Equal(oids[2]) ||
-		oid.Equal(oids[3]) || oid.Equal(oids[4]) {
+	if oid.Equal(&oids[0]) || !oid.Equal(&oids[1]) || oid.Equal(&oids[2]) ||
+		oid.Equal(&oids[3]) || oid.Equal(&oids[4]) {
 		t.Errorf("Failed to Contains()")
 	}
 
-	oid, _ = oid.AppendSubIds([]int{8, 9, 10})
+	oid = oid.AppendSubIds([]int{8, 9, 10})
 	if oid.ToString() != "1.2.3.4.5.6.7.8.9.10" {
 		t.Errorf("Failed to AppendSubIds()")
 	}
@@ -228,7 +228,7 @@ func TestOidOperation(t *testing.T) {
 
 func TestParseOidFromString(t *testing.T) {
 	expStr := ".1.3.6.1.2.1.1.1.0"
-	var v snmpclient2.Variable
+	var v snmpclient2.Oid
 
 	v, err := snmpclient2.ParseOidFromString(expStr)
 	if err != nil {
@@ -301,7 +301,7 @@ func TestOids(t *testing.T) {
 		t.Errorf("Sort() - expected [%d], actual [%d]", len(expOids), len(oids))
 	}
 	for i, o := range expOids {
-		if !o.Equal(oids[i]) {
+		if !o.Equal(&oids[i]) {
 			t.Errorf("Sort() - expected [%s], actual [%s]", o, oids[i])
 		}
 	}
@@ -317,7 +317,7 @@ func TestOids(t *testing.T) {
 		t.Errorf("Uniq() - expected [%d], actual [%d]", len(expOids), len(oids))
 	}
 	for i, o := range expOids {
-		if !o.Equal(oids[i]) {
+		if !o.Equal(&oids[i]) {
 			t.Errorf("Uniq() - expected [%s], actual [%s]", o, oids[i])
 		}
 	}
@@ -330,7 +330,7 @@ func TestOids(t *testing.T) {
 		t.Errorf("Uniq() - expected [%d], actual [%d]", len(expOids), len(oids))
 	}
 	for i, o := range expOids {
-		if !o.Equal(oids[i]) {
+		if !o.Equal(&oids[i]) {
 			t.Errorf("Uniq() - expected [%s], actual [%s]", o, oids[i])
 		}
 	}

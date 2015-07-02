@@ -8,7 +8,7 @@ import (
 )
 
 type VariableBinding struct {
-	Oid      *Oid
+	Oid      Oid
 	Variable Variable
 }
 
@@ -16,7 +16,7 @@ func (v *VariableBinding) Marshal() (b []byte, err error) {
 	var buf []byte
 	raw := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
 
-	if v.Oid == nil || v.Variable == nil {
+	if v.Variable == nil {
 		return asn1.Marshal(raw)
 	}
 
@@ -58,48 +58,49 @@ func (v *VariableBinding) Unmarshal(b []byte) (rest []byte, err error) {
 		return
 	}
 
-	v.Oid = &oid
+	v.Oid = oid
 	v.Variable = variable
 	return
 }
 
 func (v *VariableBinding) String() string {
-	var oid, vtype, value string
-	if v.Oid != nil {
-		oid = v.Oid.ToString()
-	}
+	var vtype, value string
+
 	if v.Variable != nil {
 		vtype = ToSyntexString(v.Variable.Syntex())
 		value = escape(v.Variable.ToString())
 	}
 	return fmt.Sprintf(`{"Oid": "%s", "Variable": {"Type": "%s", "Value": %s}}`,
-		oid, vtype, value)
+		v.Oid.ToString(), vtype, value)
 }
 
-func NewVarBind(oid *Oid, val Variable) *VariableBinding {
-	return &VariableBinding{
+func NewVarBind(oid Oid, val Variable) VariableBinding {
+	return VariableBinding{
 		Oid:      oid,
 		Variable: val,
 	}
 }
 
-type VariableBindings []*VariableBinding
+type VariableBindings []VariableBinding
 
 // Gets a VariableBinding that matches
-func (v VariableBindings) MatchOid(oid *Oid) *VariableBinding {
+func (v VariableBindings) MatchOid(oid Oid) *VariableBinding {
 	for _, o := range v {
-		if o.Oid != nil && o.Oid.Equal(oid) {
-			return o
+		if o.Oid.Equal(&oid) {
+			return &o
 		}
 	}
 	return nil
 }
 
 // Gets a VariableBinding list that matches the prefix
-func (v VariableBindings) MatchBaseOids(prefix *Oid) VariableBindings {
+func (v VariableBindings) MatchBaseOids(prefix Oid) VariableBindings {
+	if 0 == len(prefix.Value) {
+		return VariableBindings{}
+	}
 	result := make(VariableBindings, 0)
 	for _, o := range v {
-		if o.Oid != nil && o.Oid.Contains(prefix) {
+		if o.Oid.Contains(&prefix) {
 			result = append(result, o)
 		}
 	}
@@ -114,8 +115,8 @@ func (v VariableBindings) Sort() VariableBindings {
 	return c
 }
 
-func (v VariableBindings) uniq(comp func(a, b *VariableBinding) bool) VariableBindings {
-	var before *VariableBinding
+func (v VariableBindings) uniq(comp func(a, b VariableBinding) bool) VariableBindings {
+	var before VariableBinding
 	c := make(VariableBindings, 0, len(v))
 	for _, val := range v {
 		if !comp(before, val) {
@@ -128,14 +129,8 @@ func (v VariableBindings) uniq(comp func(a, b *VariableBinding) bool) VariableBi
 
 // Filter out adjacent VariableBinding list
 func (v VariableBindings) Uniq() VariableBindings {
-	return v.uniq(func(a, b *VariableBinding) bool {
-		if b == nil {
-			return a == nil
-		} else if b.Oid == nil {
-			return a != nil && a.Oid == nil
-		} else {
-			return a != nil && b.Oid.Equal(a.Oid)
-		}
+	return v.uniq(func(a, b VariableBinding) bool {
+		return b.Oid.Equal(&a.Oid)
 	})
 }
 
@@ -160,8 +155,7 @@ func (v sortableVarBinds) Swap(i, j int) {
 }
 
 func (v sortableVarBinds) Less(i, j int) bool {
-	t := v.VariableBindings[i]
-	return t != nil && t.Oid != nil && t.Oid.Compare(v.VariableBindings[j].Oid) < 1
+	return v.VariableBindings[i].Oid.Compare(&v.VariableBindings[j].Oid) < 1
 }
 
 // The protocol data unit of SNMP
@@ -175,7 +169,7 @@ type PDU interface {
 	SetErrorIndex(int)
 	SetNonrepeaters(int)
 	SetMaxRepetitions(int)
-	AppendVariableBinding(*Oid, Variable)
+	AppendVariableBinding(Oid, Variable)
 	VariableBindings() VariableBindings
 	Marshal() ([]byte, error)
 	Unmarshal([]byte) (rest []byte, err error)
@@ -227,12 +221,12 @@ func (pdu *PduV1) SetMaxRepetitions(i int) {
 	pdu.errorIndex = i
 }
 
-func (pdu *PduV1) AppendVariableBinding(oid *Oid, variable Variable) {
+func (pdu *PduV1) AppendVariableBinding(oid Oid, variable Variable) {
 	if nil == variable {
 		variable = NewNull()
 	}
 
-	pdu.variableBindings = append(pdu.variableBindings, &VariableBinding{
+	pdu.variableBindings = append(pdu.variableBindings, VariableBinding{
 		Oid:      oid,
 		Variable: variable,
 	})
@@ -327,12 +321,12 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 
 	next = VariableBindings.Bytes
 	for len(next) > 0 {
-		var VariableBinding VariableBinding
-		next, err = (&VariableBinding).Unmarshal(next)
+		var variableBinding VariableBinding
+		next, err = variableBinding.Unmarshal(next)
 		if err != nil {
 			return
 		}
-		pdu.variableBindings = append(pdu.variableBindings, &VariableBinding)
+		pdu.variableBindings = append(pdu.variableBindings, variableBinding)
 	}
 
 	pdu.pduType = PduType(raw.Tag)

@@ -85,7 +85,7 @@ func TestVarBinds(t *testing.T) {
 
 	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.0")
 	VariableBinding := v.MatchOid(oid)
-	if VariableBinding == nil || !VariableBinding.Oid.Equal(oid) {
+	if VariableBinding == nil || !VariableBinding.Oid.Equal(&oid) {
 		t.Errorf("Failed to MatchOid()")
 	}
 	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.1")
@@ -93,7 +93,7 @@ func TestVarBinds(t *testing.T) {
 	if VariableBinding != nil {
 		t.Errorf("Failed to MatchOid() - no match")
 	}
-	VariableBinding = v.MatchOid(nil)
+	VariableBinding = v.MatchOid(snmpclient2.EmptyOID)
 	if VariableBinding != nil {
 		t.Errorf("Failed to MatchOid() - nil")
 	}
@@ -105,7 +105,7 @@ func TestVarBinds(t *testing.T) {
 	}
 	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.0")
 	VariableBindings = v.MatchBaseOids(oid)
-	if len(VariableBindings) != 1 || !VariableBindings[0].Oid.Equal(oid) {
+	if len(VariableBindings) != 1 || !VariableBindings[0].Oid.Equal(&oid) {
 		t.Errorf("Failed to MatchBaseOids() - one")
 	}
 	oid, _ = snmpclient2.ParseOidFromString("1.3.6.1.2.1.1.1.1")
@@ -113,7 +113,7 @@ func TestVarBinds(t *testing.T) {
 	if len(VariableBindings) != 0 {
 		t.Errorf("Failed to MatchBaseOids() - no match")
 	}
-	VariableBindings = v.MatchBaseOids(nil)
+	VariableBindings = v.MatchBaseOids(snmpclient2.EmptyOID)
 	if len(VariableBindings) != 0 {
 		t.Errorf("Failed to MatchBaseOids() - nil")
 	}
@@ -142,7 +142,7 @@ func TestVarBinds(t *testing.T) {
 		t.Errorf("Sort() - expected [%d], actual [%d]", len(expOids), len(w))
 	}
 	for i, o := range expOids {
-		if !o.Equal(w[i].Oid) {
+		if !o.Equal(&w[i].Oid) {
 			t.Errorf("Sort() - expected [%s], actual [%s]", o, w[i].Oid)
 		}
 	}
@@ -156,9 +156,10 @@ func TestVarBinds(t *testing.T) {
 	w = w.Sort().Uniq()
 	if len(expOids) != len(w) {
 		t.Errorf("Uniq() - expected [%d], actual [%d]", len(expOids), len(w))
+		return
 	}
 	for i, o := range expOids {
-		if !o.Equal(w[i].Oid) {
+		if !o.Equal(&w[i].Oid) {
 			t.Errorf("Uniq() - expected [%s], actual [%s]", o, w[i].Oid)
 		}
 	}

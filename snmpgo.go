@@ -249,7 +249,7 @@ func (s *SNMP) GetBulkWalk(oids Oids, nonRepeaters, maxRepetitions int) (result 
 			mLength := len(matched)
 
 			if mLength == 0 || resBinds.MatchOid(matched[mLength-1].Oid) != nil {
-				reqOids[i] = nil
+				reqOids[i] = NewOid(nil)
 				continue
 			}
 
@@ -265,13 +265,13 @@ func (s *SNMP) GetBulkWalk(oids Oids, nonRepeaters, maxRepetitions int) (result 
 			}
 
 			if hasError || (filled && mLength < maxRepetitions) {
-				reqOids[i] = nil
+				reqOids[i] = NewOid(nil)
 			}
 		}
 
 		// sweep completed oids
 		for i := len(reqOids) - 1; i >= 0; i-- {
-			if reqOids[i] == nil {
+			if reqOids[i].Value == nil {
 				reqOids = append(reqOids[:i], reqOids[i+1:]...)
 				oids = append(oids[:i], oids[i+1:]...)
 			}

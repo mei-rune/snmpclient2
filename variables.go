@@ -1,7 +1,6 @@
 package snmpclient2
 
 import (
-	"bytes"
 	"encoding/asn1"
 	"encoding/hex"
 	"fmt"
@@ -50,7 +49,7 @@ func NewVariable(s string) (Variable, error) {
 	case "opaque":
 		return NewOpaqueFromString(ss[1])
 	case "oid":
-		return ParseOidFromString(ss[1])
+		return NewOidFromString(ss[1])
 	case "ip", "ipaddress":
 		return NewIPAddressFromString(ss[1])
 	case "timeticks":
@@ -320,16 +319,13 @@ func (v *Oid) Equal(o *Oid) bool {
 }
 
 // Returns Oid with additional sub-ids
-func (v *Oid) AppendSubIds(subs []int) (*Oid, error) {
-	buf := bytes.NewBufferString(v.ToString())
-	for _, i := range subs {
-		buf.WriteString(".")
-		buf.WriteString(strconv.Itoa(i))
-	}
-	return ParseOidFromString(buf.String())
+func (v *Oid) AppendSubIds(subs []int) Oid {
+	return NewOid(append(v.Value, subs...))
 }
 
-func ParseOidFromString(s string) (*Oid, error) {
+var EmptyOID Oid
+
+func ParseOidFromString(s string) (Oid, error) {
 	ss := strings.Split(strings.Trim(s, "."), ".")
 	if 2 > len(ss) {
 		ss = strings.Split(strings.Trim(s, "_"), "_")
@@ -339,7 +335,7 @@ func ParseOidFromString(s string) (*Oid, error) {
 	for idx, v := range ss {
 		if 0 == len(v) {
 			if 0 != idx {
-				return nil, fmt.Errorf("oid is syntex error, value is %s", s)
+				return EmptyOID, fmt.Errorf("oid is syntex error, value is %s", s)
 			}
 			continue
 		}
@@ -350,7 +346,7 @@ func ParseOidFromString(s string) (*Oid, error) {
 		}
 
 		if 0 != idx {
-			return nil, ArgumentError{
+			return EmptyOID, ArgumentError{
 				Value:   s,
 				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, math.MaxUint32),
 			}
@@ -376,30 +372,30 @@ func ParseOidFromString(s string) (*Oid, error) {
 		case "SNMPv2-SMI::security":
 			result = append(result, 1, 3, 6, 1, 5)
 		default:
-			return nil, ArgumentError{
+			return EmptyOID, ArgumentError{
 				Value:   s,
 				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, math.MaxUint32),
 			}
 		}
 
 	}
-	return &Oid{result}, nil
+	return Oid{result}, nil
 }
 
-func NewOid(oid []int) *Oid {
-	return &Oid{oid}
+func NewOid(oid []int) Oid {
+	return Oid{oid}
 }
 
 func NewOidFromString(s string) (Variable, error) {
 	if o, e := ParseOidFromString(s); nil == e {
-		return o, nil
+		return &o, nil
 	} else {
 		return nil, e
 	}
 }
 
 // MustNewOid is like NewOid but panics if argument cannot be parsed
-func MustParseOidFromString(s string) *Oid {
+func MustParseOidFromString(s string) Oid {
 	if oid, err := ParseOidFromString(s); err != nil {
 		panic(`snmpgo.MustNewOid: ` + err.Error())
 	} else {
@@ -407,7 +403,7 @@ func MustParseOidFromString(s string) *Oid {
 	}
 }
 
-type Oids []*Oid
+type Oids []Oid
 
 // Sort a Oid list
 func (o Oids) Sort() Oids {
@@ -417,8 +413,8 @@ func (o Oids) Sort() Oids {
 	return c
 }
 
-func (o Oids) uniq(comp func(a, b *Oid) bool) Oids {
-	var before *Oid
+func (o Oids) uniq(comp func(a, b Oid) bool) Oids {
+	var before Oid
 	c := make(Oids, 0, len(o))
 	for _, oid := range o {
 		if !comp(before, oid) {
@@ -431,23 +427,18 @@ func (o Oids) uniq(comp func(a, b *Oid) bool) Oids {
 
 // Filter out adjacent OID list
 func (o Oids) Uniq() Oids {
-	return o.uniq(func(a, b *Oid) bool {
-		if b == nil {
-			return a == nil
-		} else {
-			return b.Equal(a)
-		}
+	return o.uniq(func(a, b Oid) bool {
+		return b.Equal(&a)
 	})
 }
 
 // Filter out adjacent OID list with the same prefix
 func (o Oids) UniqBase() Oids {
-	return o.uniq(func(a, b *Oid) bool {
-		if b == nil {
-			return a == nil
-		} else {
-			return b.Contains(a)
+	return o.uniq(func(a, b Oid) bool {
+		if 0 == len(a.Value) {
+			return false
 		}
+		return b.Contains(&a)
 	})
 }
 
@@ -464,7 +455,7 @@ func (o sortableOids) Swap(i, j int) {
 }
 
 func (o sortableOids) Less(i, j int) bool {
-	return o.Oids[i] != nil && o.Oids[i].Compare(o.Oids[j]) < 1
+	return o.Oids[i].Compare(&o.Oids[j]) < 1
 }
 
 func NewOids(s []string) (oids Oids, err error) {
