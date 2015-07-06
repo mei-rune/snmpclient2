@@ -7,6 +7,25 @@ import (
 	"strings"
 )
 
+// The protocol data unit of SNMP
+// The PduV1 is used by SNMP V1 and V2c, other than the SNMP V1 Trap
+//
+// trap pdu
+// +------------+--------------+------------+----------------+---------------+-------------+---------------------+
+// |  PDU Type  |  enterprise  | agent addr |  generic trap  | specific trap | time stamp  |  variable bindings  |
+// +------------+--------------+------------+----------------+---------------+-------------+---------------------+
+//
+// reponse pdu
+// +------------+--------------+----------------+---------------+----------------------+
+// |  PDU Type  |  request id  |  error status  |  error index  |   variable bindings  |
+// +------------+--------------+----------------+---------------+----------------------+
+//
+// request pdu
+// +------------+--------------+----------------+---------------+----------------------+
+// |  PDU Type  |  request id  |       0        |       0       |   variable bindings  |
+// +------------+--------------+----------------+---------------+----------------------+
+//
+
 type VariableBinding struct {
 	Oid      Oid
 	Variable Variable
@@ -159,6 +178,23 @@ func (v sortableVarBinds) Less(i, j int) bool {
 }
 
 // The protocol data unit of SNMP
+// The PduV1 is used by SNMP V1 and V2c, other than the SNMP V1 Trap
+//
+// trap pdu
+// +------------+--------------+------------+----------------+---------------+-------------+---------------------+
+// |  PDU Type  |  enterprise  | agent addr |  generic trap  | specific trap | time stamp  |  variable bindings  |
+// +------------+--------------+------------+----------------+---------------+-------------+---------------------+
+//
+// reponse pdu
+// +------------+--------------+----------------+---------------+----------------------+
+// |  PDU Type  |  request id  |  error status  |  error index  |   variable bindings  |
+// +------------+--------------+----------------+---------------+----------------------+
+//
+// request pdu
+// +------------+--------------+----------------+---------------+----------------------+
+// |  PDU Type  |  request id  |       0        |       0       |   variable bindings  |
+// +------------+--------------+----------------+---------------+----------------------+
+//
 type PDU interface {
 	PduType() PduType
 	RequestId() int
@@ -183,6 +219,11 @@ type PduV1 struct {
 	errorStatus      ErrorStatus
 	errorIndex       int
 	variableBindings VariableBindings
+	Enterprise       Oid
+	AgentAddress     Ipaddress
+	GenericTrap      int
+	SpecificTrap     int
+	Timestamp        asn1.BitString
 }
 
 func (pdu *PduV1) PduType() PduType {
@@ -288,24 +329,76 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 			raw.Class, raw.Tag, ToHexStr(b, " "))}
 	}
 
+	var requestId int
+	var errorStatus int
+	var errorIndex int
+	var enterprise Oid
+	var agentAddress Ipaddress
+	var genericTrap int
+	var specificTrap int
+	var timestamp asn1.BitString
+
 	next := raw.Bytes
 
-	var requestId int
-	next, err = asn1.Unmarshal(next, &requestId)
-	if err != nil {
-		return
-	}
+	// The protocol data unit of SNMP
+	// The PduV1 is used by SNMP V1 and V2c, other than the SNMP V1 Trap
+	//
+	// trap pdu
+	// +------------+--------------+------------+----------------+---------------+-------------+---------------------+
+	// |  PDU Type  |  enterprise  | agent addr |  generic trap  | specific trap | time stamp  |  variable bindings  |
+	// +------------+--------------+------------+----------------+---------------+-------------+---------------------+
+	//
+	// reponse pdu
+	// +------------+--------------+----------------+---------------+----------------------+
+	// |  PDU Type  |  request id  |  error status  |  error index  |   variable bindings  |
+	// +------------+--------------+----------------+---------------+----------------------+
+	//
+	// request pdu
+	// +------------+--------------+----------------+---------------+----------------------+
+	// |  PDU Type  |  request id  |       0        |       0       |   variable bindings  |
+	// +------------+--------------+----------------+---------------+----------------------+
+	//
 
-	var errorStatus int
-	next, err = asn1.Unmarshal(next, &errorStatus)
-	if err != nil {
-		return
-	}
+	if Trap == PduType(raw.Tag) {
+		next, err = enterprise.Unmarshal(next)
+		if err != nil {
+			return
+		}
 
-	var errorIndex int
-	next, err = asn1.Unmarshal(next, &errorIndex)
-	if err != nil {
-		return
+		next, err = agentAddress.Unmarshal(next)
+		if err != nil {
+			return
+		}
+
+		next, err = asn1.Unmarshal(next, &genericTrap)
+		if err != nil {
+			return
+		}
+
+		next, err = asn1.Unmarshal(next, &specificTrap)
+		if err != nil {
+			return
+		}
+		var t asn1.RawValue
+		next, err = asn1.Unmarshal(next, &t)
+		if err != nil {
+			return
+		}
+	} else {
+		next, err = asn1.Unmarshal(next, &requestId)
+		if err != nil {
+			return
+		}
+
+		next, err = asn1.Unmarshal(next, &errorStatus)
+		if err != nil {
+			return
+		}
+
+		next, err = asn1.Unmarshal(next, &errorIndex)
+		if err != nil {
+			return
+		}
 	}
 
 	var VariableBindings asn1.RawValue
@@ -333,6 +426,12 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 	pdu.requestId = requestId
 	pdu.errorStatus = ErrorStatus(errorStatus)
 	pdu.errorIndex = errorIndex
+
+	pdu.Enterprise = enterprise
+	pdu.AgentAddress = agentAddress
+	pdu.GenericTrap = genericTrap
+	pdu.SpecificTrap = specificTrap
+	pdu.Timestamp = timestamp
 	return
 }
 
