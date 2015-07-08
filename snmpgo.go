@@ -10,8 +10,6 @@ import (
 // An argument for creating a SNMP Object
 type Arguments struct {
 	Version          SnmpVersion   // SNMP version to use
-	Network          string        // See net.Dial parameter (The default is `udp`)
-	Address          string        // See net.Dial parameter
 	Timeout          time.Duration // Request timeout (The default is 5sec)
 	Retries          uint          // Number of retries (The default is `0`)
 	MessageMaxSize   int           // Maximum size of an SNMP message (The default is `1400`)
@@ -28,9 +26,9 @@ type Arguments struct {
 }
 
 func (a *Arguments) setDefault() {
-	if a.Network == "" {
-		a.Network = "udp"
-	}
+	// if a.Network == "" {
+	// 	a.Network = "udp"
+	// }
 	if a.Timeout <= 0 {
 		a.Timeout = timeoutDefault
 	}
@@ -116,9 +114,11 @@ func (a *Arguments) String() string {
 
 // SNMP Object provides functions for the SNMP Client
 type SNMP struct {
-	args Arguments
-	mp   MessageProcessing
-	conn net.Conn
+	Network string
+	Address string
+	args    Arguments
+	mp      MessageProcessing
+	conn    net.Conn
 }
 
 // Open a connection
@@ -126,9 +126,12 @@ func (s *SNMP) Open() (err error) {
 	if s.conn != nil {
 		return
 	}
+	if "" == s.Network {
+		s.Network = "udp"
+	}
 
 	err = retry(int(s.args.Retries), func() error {
-		conn, e := net.DialTimeout(s.args.Network, s.args.Address, s.args.Timeout)
+		conn, e := net.DialTimeout(s.Network, s.Address, s.args.Timeout)
 		if e == nil {
 			s.conn = conn
 			s.mp = NewMessageProcessing(s.args.Version)

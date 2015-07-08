@@ -6,6 +6,7 @@ import (
 )
 
 var UnsupportedOperation error = errors.New("Unsupported operation")
+var TimeoutError = errors.New("time out")
 
 // An ArgumentError suggests that the arguments are wrong
 type ArgumentError struct {
