@@ -161,12 +161,12 @@ func (v *OctetString) Bytes() []byte {
 }
 
 func (v *OctetString) ToString() string {
-	for _, c := range v.Value {
-		if !strconv.IsPrint(rune(c)) {
-			return ToHexStr(v.Value, ":")
-		}
-	}
-	return string(v.Value)
+	//for _, c := range v.Value {
+	//	if !strconv.IsPrint(rune(c)) {
+	return hex.EncodeToString(v.Value) //ToHexStr(v.Value, ":")
+	//	}
+	//}
+	//return string(v.Value)
 }
 
 func (v *OctetString) String() string {
@@ -516,15 +516,11 @@ func (v *Ipaddress) Uint() uint64 {
 }
 
 func (v *Ipaddress) ToString() string {
-	s := make([]string, len(v.Value))
-	for i, b := range v.Value {
-		s[i] = strconv.Itoa(int(b))
-	}
-	return strings.Join(s, ".")
+	return net.IP(v.Value).String()
 }
 
 func (v *Ipaddress) String() string {
-	return "ip" + v.ToString()
+	return "[ip]" + v.ToString()
 }
 
 func (v *Ipaddress) Syntex() int {
@@ -556,8 +552,7 @@ func NewIPAddressFromString(s string) (Variable, error) {
 	if nil == addr {
 		return nil, fmt.Errorf("SnmpAddress style error, value is %s", s)
 	}
-
-	return &Ipaddress{OctetString{[]byte{addr[0], addr[1], addr[3], addr[4]}}}, nil
+	return &Ipaddress{OctetString{[]byte{addr[0], addr[1], addr[2], addr[3]}}}, nil
 }
 
 type Counter32 struct {
