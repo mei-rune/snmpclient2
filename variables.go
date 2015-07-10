@@ -62,8 +62,10 @@ func NewVariable(s string) (Variable, error) {
 type Variable interface {
 	Int() int64
 	Uint() uint64
+	Bytes() []byte
 	// Return a string representation of this Variable
 	ToString() string
+	String() string
 
 	IsError() bool
 	ErrorMessage() string
@@ -95,6 +97,10 @@ func (v *Integer) Uint() uint64 {
 		panic(UnsupportedOperation)
 	}
 	return uint64(v.Value)
+}
+
+func (v *Integer) Bytes() []byte {
+	panic(UnsupportedOperation)
 }
 
 func (v *Integer) ToString() string {
@@ -148,6 +154,10 @@ func (v *OctetString) Int() int64 {
 
 func (v *OctetString) Uint() uint64 {
 	panic(UnsupportedOperation)
+}
+
+func (v *OctetString) Bytes() []byte {
+	return v.Value
 }
 
 func (v *OctetString) ToString() string {
@@ -205,6 +215,10 @@ func (v *Null) Uint() uint64 {
 	panic(UnsupportedOperation)
 }
 
+func (v *Null) Bytes() []byte {
+	panic(UnsupportedOperation)
+}
+
 func (v *Null) ToString() string {
 	return ""
 }
@@ -248,6 +262,10 @@ func (v *Oid) Int() int64 {
 }
 
 func (v *Oid) Uint() uint64 {
+	panic(UnsupportedOperation)
+}
+
+func (v *Oid) Bytes() []byte {
 	panic(UnsupportedOperation)
 }
 
@@ -562,6 +580,10 @@ func (v *Counter32) Uint() uint64 {
 	return uint64(v.Value)
 }
 
+func (v *Counter32) Bytes() []byte {
+	panic(UnsupportedOperation)
+}
+
 func (v *Counter32) ToString() string {
 	return strconv.FormatInt(int64(v.Value), 10)
 }
@@ -733,6 +755,10 @@ func (v *Counter64) Uint() uint64 {
 	return v.Value
 }
 
+func (v *Counter64) Bytes() []byte {
+	panic(UnsupportedOperation)
+}
+
 func (v *Counter64) ToString() string {
 	return strconv.FormatUint(v.Value, 10)
 }
@@ -774,6 +800,10 @@ type NoSucheObject struct {
 	Null
 }
 
+func (v *NoSucheObject) Bytes() []byte {
+	panic(UnsupportedOperation)
+}
+
 func (v *NoSucheObject) IsError() bool {
 	return true
 }
@@ -808,6 +838,10 @@ type NoSucheInstance struct {
 	Null
 }
 
+func (v *NoSucheInstance) Bytes() []byte {
+	panic(UnsupportedOperation)
+}
+
 func (v *NoSucheInstance) IsError() bool {
 	return true
 }
@@ -840,6 +874,10 @@ func NewNoSucheInstance() *NoSucheInstance {
 
 type EndOfMibView struct {
 	Null
+}
+
+func (v *EndOfMibView) Bytes() []byte {
+	panic(UnsupportedOperation)
 }
 
 func (v *EndOfMibView) IsError() bool {
