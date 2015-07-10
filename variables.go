@@ -798,8 +798,10 @@ func (v *NoSucheObject) Unmarshal(b []byte) (rest []byte, err error) {
 	return unmarshalEmpty(b, SYNTAX_NOSUCHOBJECT)
 }
 
+var NOSUCHEOBJECT = &NoSucheObject{Null{}}
+
 func NewNoSucheObject() *NoSucheObject {
-	return &NoSucheObject{Null{}}
+	return NOSUCHEOBJECT
 }
 
 type NoSucheInstance struct {
@@ -830,8 +832,10 @@ func (v *NoSucheInstance) Unmarshal(b []byte) (rest []byte, err error) {
 	return unmarshalEmpty(b, SYNTAX_NOSUCHINSTANCE)
 }
 
+var NOSUCHEINSTANCE = &NoSucheInstance{Null{}}
+
 func NewNoSucheInstance() *NoSucheInstance {
-	return &NoSucheInstance{Null{}}
+	return NOSUCHEINSTANCE
 }
 
 type EndOfMibView struct {
@@ -862,8 +866,10 @@ func (v *EndOfMibView) Unmarshal(b []byte) (rest []byte, err error) {
 	return unmarshalEmpty(b, SYNTAX_ENDOFMIBVIEW)
 }
 
+var ENDOFMIBVIEW = &EndOfMibView{Null{}}
+
 func NewEndOfMibView() *EndOfMibView {
-	return &EndOfMibView{Null{}}
+	return ENDOFMIBVIEW
 }
 
 func unmarshalVariable(b []byte) (v Variable, rest []byte, err error) {
