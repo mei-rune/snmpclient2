@@ -121,7 +121,7 @@ func (v *Integer) String() string {
 }
 
 func (v *Integer) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *Integer) Syntex() int {
@@ -187,7 +187,7 @@ func (v *OctetString) String() string {
 }
 
 func (v *OctetString) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *OctetString) Syntex() int {
@@ -245,7 +245,7 @@ func (v *Null) String() string {
 }
 
 func (v *Null) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *Null) Syntex() int {
@@ -299,7 +299,7 @@ func (v *Oid) String() string {
 }
 
 func (v *Oid) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *Oid) Syntex() int {
@@ -545,7 +545,7 @@ func (v *Ipaddress) String() string {
 }
 
 func (v *Ipaddress) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *Ipaddress) Syntex() int {
@@ -613,7 +613,7 @@ func (v *Counter32) String() string {
 }
 
 func (v *Counter32) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *Counter32) Syntex() int {
@@ -653,7 +653,7 @@ func (v *Gauge32) String() string {
 }
 
 func (v *Gauge32) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *Gauge32) Syntex() int {
@@ -693,7 +693,7 @@ func (v *TimeTicks) String() string {
 }
 
 func (v *TimeTicks) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *TimeTicks) Syntex() int {
@@ -737,7 +737,7 @@ func (v *Opaque) String() string {
 }
 
 func (v *Opaque) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *Opaque) Syntex() int {
@@ -800,7 +800,7 @@ func (v *Counter64) ToString() string {
 }
 
 func (v *Counter64) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *Counter64) String() string {
@@ -857,7 +857,7 @@ func (v *NoSucheObject) String() string {
 }
 
 func (v *NoSucheObject) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *NoSucheObject) Syntex() int {
@@ -899,7 +899,7 @@ func (v *NoSucheInstance) String() string {
 }
 
 func (v *NoSucheInstance) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *NoSucheInstance) Syntex() int {
@@ -941,7 +941,7 @@ func (v *EndOfMibView) String() string {
 }
 
 func (v *EndOfMibView) MarshalJSON() ([]byte, error) {
-	return []byte(v.ToString()), nil
+	return []byte("\"" + v.String() + "\""), nil
 }
 
 func (v *EndOfMibView) Syntex() int {
