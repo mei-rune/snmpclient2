@@ -54,6 +54,15 @@ func NewVariable(s string) (Variable, error) {
 		return NewIPAddressFromString(ss[1])
 	case "timeticks":
 		return NewTimeticksFromString(ss[1])
+	case "error":
+		switch ss[1] {
+		case "EndOfMibView":
+			return NewEndOfMibView(), nil
+		case "NoSucheInstance":
+			return NewNoSucheInstance(), nil
+		case "NoSucheObject":
+			return NewNoSucheObject(), nil
+		}
 	}
 
 	return nil, fmt.Errorf("unsupported snmp type -", ss[0])
@@ -109,6 +118,10 @@ func (v *Integer) ToString() string {
 
 func (v *Integer) String() string {
 	return "[int]" + strconv.FormatInt(int64(v.Value), 10)
+}
+
+func (v *Integer) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
 }
 
 func (v *Integer) Syntex() int {
@@ -173,6 +186,10 @@ func (v *OctetString) String() string {
 	return "[octets]" + v.ToString()
 }
 
+func (v *OctetString) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
+}
+
 func (v *OctetString) Syntex() int {
 	return SYNTAX_OCTETSTRING
 }
@@ -227,6 +244,10 @@ func (v *Null) String() string {
 	return "[null]"
 }
 
+func (v *Null) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
+}
+
 func (v *Null) Syntex() int {
 	return SYNTAX_NULL
 }
@@ -275,6 +296,10 @@ func (v *Oid) ToString() string {
 
 func (v *Oid) String() string {
 	return "[oid]" + asn1.ObjectIdentifier(v.Value).String()
+}
+
+func (v *Oid) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
 }
 
 func (v *Oid) Syntex() int {
@@ -503,10 +528,6 @@ func (v *Ipaddress) Int() int64 {
 	return int64(t)
 }
 
-func (v *Ipaddress) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + v.ToString() + "\""), nil
-}
-
 func (v *Ipaddress) Uint() uint64 {
 	var t uint32
 	for i, b := range v.Value {
@@ -521,6 +542,10 @@ func (v *Ipaddress) ToString() string {
 
 func (v *Ipaddress) String() string {
 	return "[ip]" + v.ToString()
+}
+
+func (v *Ipaddress) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
 }
 
 func (v *Ipaddress) Syntex() int {
@@ -587,6 +612,10 @@ func (v *Counter32) String() string {
 	return "[counter32]" + strconv.FormatInt(int64(v.Value), 10)
 }
 
+func (v *Counter32) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
+}
+
 func (v *Counter32) Syntex() int {
 	return SYNTAX_COUNTER32
 }
@@ -623,6 +652,10 @@ func (v *Gauge32) String() string {
 	return "[gauge32]" + strconv.FormatInt(int64(v.Value), 10)
 }
 
+func (v *Gauge32) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
+}
+
 func (v *Gauge32) Syntex() int {
 	return SYNTAX_GAUGE32
 }
@@ -657,6 +690,10 @@ type TimeTicks struct {
 
 func (v *TimeTicks) String() string {
 	return "[timeticks]" + strconv.FormatInt(int64(v.Value), 10)
+}
+
+func (v *TimeTicks) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
 }
 
 func (v *TimeTicks) Syntex() int {
@@ -697,6 +734,10 @@ func (v *Opaque) ToString() string {
 
 func (v *Opaque) String() string {
 	return "[opaque]" + v.ToString()
+}
+
+func (v *Opaque) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
 }
 
 func (v *Opaque) Syntex() int {
@@ -758,6 +799,10 @@ func (v *Counter64) ToString() string {
 	return strconv.FormatUint(v.Value, 10)
 }
 
+func (v *Counter64) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
+}
+
 func (v *Counter64) String() string {
 	return "[counter64]" + strconv.FormatUint(v.Value, 10)
 }
@@ -811,6 +856,10 @@ func (v *NoSucheObject) String() string {
 	return "[error]NoSucheObject"
 }
 
+func (v *NoSucheObject) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
+}
+
 func (v *NoSucheObject) Syntex() int {
 	return SYNTAX_NOSUCHOBJECT
 }
@@ -849,6 +898,10 @@ func (v *NoSucheInstance) String() string {
 	return "[error]NoSucheInstance"
 }
 
+func (v *NoSucheInstance) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
+}
+
 func (v *NoSucheInstance) Syntex() int {
 	return SYNTAX_NOSUCHINSTANCE
 }
@@ -885,6 +938,10 @@ func (v *EndOfMibView) ErrorMessage() string {
 
 func (v *EndOfMibView) String() string {
 	return "[error]EndOfMibView"
+}
+
+func (v *EndOfMibView) MarshalJSON() ([]byte, error) {
+	return []byte(v.ToString()), nil
 }
 
 func (v *EndOfMibView) Syntex() int {
