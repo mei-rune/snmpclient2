@@ -2,6 +2,7 @@ package snmpclient2_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"strconv"
 	"testing"
 
@@ -84,7 +85,8 @@ func TestOctetString(t *testing.T) {
 	//}
 	exceptedError(t, v)
 
-	if expStr != v.ToString() {
+	x, _ := hex.DecodeString(v.ToString())
+	if expStr != string(x) {
 		t.Errorf("ToString() - expected [%s], actual[%s]", expStr, v.ToString())
 	}
 
@@ -102,7 +104,9 @@ func TestOctetString(t *testing.T) {
 	if len(rest) != 0 || err != nil {
 		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.ToString() {
+
+	x, _ = hex.DecodeString(w.ToString())
+	if expStr != string(x) {
 		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 
@@ -111,7 +115,8 @@ func TestOctetString(t *testing.T) {
 	if len(rest) != 1 || err != nil {
 		t.Errorf("Unmarshal() with rest - len[%d] err[%v]", len(rest), err)
 	}
-	if expStr != w.ToString() {
+	x, _ = hex.DecodeString(w.ToString())
+	if expStr != string(x) {
 		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
 }

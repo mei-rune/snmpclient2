@@ -42,7 +42,7 @@ func TestVarBind(t *testing.T) {
 
 	v.Variable = snmpclient2.NewOctetString([]byte("MyHost"))
 	testVarBind(t, &v,
-		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "MyHost"}}`)
+		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "4d79486f7374"}}`)
 
 	v.Variable = snmpclient2.NewNull()
 	testVarBind(t, &v, `{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "null", "Value": ""}}`)
@@ -214,7 +214,7 @@ func TestPduV1(t *testing.T) {
 
 	expStr := `{"Type": "GetRequest", "RequestId": "123", ` +
 		`"ErrorStatus": "TooBig", "ErrorIndex": "2", "VariableBindings": [` +
-		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "MyHost"}}, ` +
+		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "4d79486f7374"}}, ` +
 		`{"Oid": "1.3.6.1.2.1.1.2.0", "Variable": {"Type": "null", "Value": ""}}, ` +
 		`{"Oid": "1.3.6.1.2.1.1.3.0", "Variable": {"Type": "timeticks", "Value": "11111"}}]}`
 	var w snmpclient2.PduV1
@@ -267,7 +267,7 @@ func TestScopedPdu(t *testing.T) {
 		`"ErrorStatus": "TooBig", "ErrorIndex": "2", ` +
 		`"ContextEngineId": "8001020304050607", "ContextName": "MyContext", ` +
 		`"VariableBindings": [` +
-		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "MyHost"}}, ` +
+		`{"Oid": "1.3.6.1.2.1.1.1.0", "Variable": {"Type": "octets", "Value": "4d79486f7374"}}, ` +
 		`{"Oid": "1.3.6.1.2.1.1.2.0", "Variable": {"Type": "null", "Value": ""}}, ` +
 		`{"Oid": "1.3.6.1.2.1.1.3.0", "Variable": {"Type": "timeticks", "Value": "11111"}}]}`
 	var w snmpclient2.ScopedPdu

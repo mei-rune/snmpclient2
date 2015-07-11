@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -120,6 +121,18 @@ func padding(b []byte, size int) []byte {
 		b = append(b, bytes.Repeat([]byte{0x00}, pad)...)
 	}
 	return b
+}
+
+func ParseVersion(v string) (SnmpVersion, error) {
+	switch v {
+	case "v1", "V1", "1":
+		return V1, nil
+	case "v2", "V2", "v2c", "V2C", "2", "2c", "2C":
+		return V2c, nil
+	case "v3", "V3", "3":
+		return V3, nil
+	}
+	return 0, errors.New("Unsupported version - " + v)
 }
 
 // For snmpgo testing
