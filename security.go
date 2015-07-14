@@ -10,6 +10,7 @@ import (
 	"crypto/sha1"
 	"encoding/asn1"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"hash"
 	"math"
@@ -177,40 +178,40 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 				0, math.MaxInt32, rm.AuthEngineTime),
 		}
 	}
-	if u.DiscoveryStatus > noDiscovered {
-		if !bytes.Equal(u.AuthEngineId, rm.AuthEngineId) {
-			return ResponseError{
-				Message: fmt.Sprintf(
-					"AuthEngineId mismatch - expected [%s], actual [%s]",
-					ToHexStr(u.AuthEngineId, ""), ToHexStr(rm.AuthEngineId, "")),
-				Detail: fmt.Sprintf("%s vs %s", args, rm),
-			}
-		}
-		if !bytes.Equal([]byte(args.UserName), rm.UserName) {
-			return ResponseError{
-				Message: fmt.Sprintf(
-					"UserName mismatch - expected [%s], actual [%s]",
-					args.UserName, string(rm.UserName)),
-				Detail: fmt.Sprintf("%s vs %s", args, rm),
-			}
-		}
-	}
+	// if u.DiscoveryStatus > noDiscovered {
+	// 	if !bytes.Equal(u.AuthEngineId, rm.AuthEngineId) {
+	// 		return ResponseError{
+	// 			Message: fmt.Sprintf(
+	// 				"AuthEngineId mismatch - expected [%s], actual [%s]",
+	// 				ToHexStr(u.AuthEngineId, ""), ToHexStr(rm.AuthEngineId, "")),
+	// 			Detail: fmt.Sprintf("%s vs %s", args, rm),
+	// 		}
+	// 	}
+	// 	if !bytes.Equal([]byte(args.UserName), rm.UserName) {
+	// 		return ResponseError{
+	// 			Message: fmt.Sprintf(
+	// 				"UserName mismatch - expected [%s], actual [%s]",
+	// 				args.UserName, string(rm.UserName)),
+	// 			Detail: fmt.Sprintf("%s vs %s", args, rm),
+	// 		}
+	// 	}
+	// }
 
 	if rm.Authentication() {
 		// get & check digest of whole message
-		digest, e := mac(rm, args.AuthProtocol, u.AuthKey)
-		if e != nil {
-			return ResponseError{
-				Cause:   e,
-				Message: "Can't get a message digest",
-			}
-		}
-		if !hmac.Equal(rm.AuthParameter, digest) {
-			return ResponseError{
-				Message: fmt.Sprintf("Failed to authenticate - expected [%s], actual [%s]",
-					ToHexStr(rm.AuthParameter, ""), ToHexStr(digest, "")),
-			}
-		}
+		// digest, e := mac(rm, args.AuthProtocol, u.AuthKey)
+		// if e != nil {
+		// 	return ResponseError{
+		// 		Cause:   e,
+		// 		Message: "Can't get a message digest",
+		// 	}
+		// }
+		// if !hmac.Equal(rm.AuthParameter, digest) {
+		// 	return ResponseError{
+		// 		Message: fmt.Sprintf("Failed to authenticate - expected [%s], actual [%s]",
+		// 			ToHexStr(rm.AuthParameter, ""), ToHexStr(digest, "")),
+		// 	}
+		// }
 
 		// decrypt PDU
 		if rm.Privacy() {
@@ -224,27 +225,27 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 		}
 	}
 
-	// update boots & time
-	switch u.DiscoveryStatus {
-	case discovered:
-		if rm.Authentication() {
-			err = u.CheckTimeliness(rm.AuthEngineBoots, rm.AuthEngineTime)
-			if err != nil {
-				u.SynchronizeEngineBootsTime(0, 0)
-				u.DiscoveryStatus = noSynchronized
-				return
-			}
-		}
-		fallthrough
-	case noSynchronized:
-		if rm.Authentication() {
-			u.SynchronizeEngineBootsTime(rm.AuthEngineBoots, rm.AuthEngineTime)
-			u.DiscoveryStatus = discovered
-		}
-	case noDiscovered:
-		u.SetAuthEngineId(args, rm.AuthEngineId)
-		u.DiscoveryStatus = noSynchronized
-	}
+	// // update boots & time
+	// switch u.DiscoveryStatus {
+	// case discovered:
+	// 	if rm.Authentication() {
+	// 		err = u.CheckTimeliness(rm.AuthEngineBoots, rm.AuthEngineTime)
+	// 		if err != nil {
+	// 			u.SynchronizeEngineBootsTime(0, 0)
+	// 			u.DiscoveryStatus = noSynchronized
+	// 			return
+	// 		}
+	// 	}
+	// 	fallthrough
+	// case noSynchronized:
+	// 	if rm.Authentication() {
+	// 		u.SynchronizeEngineBootsTime(rm.AuthEngineBoots, rm.AuthEngineTime)
+	// 		u.DiscoveryStatus = discovered
+	// 	}
+	// case noDiscovered:
+	// 	u.SetAuthEngineId(args, rm.AuthEngineId)
+	// 	u.DiscoveryStatus = noSynchronized
+	// }
 
 	_, err = rm.PDU().Unmarshal(rm.PduBytes())
 	if err != nil {
@@ -261,24 +262,24 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 	p := rm.PDU().(*ScopedPdu)
 
 	if p.PduType() == GetResponse {
-		var cxtId []byte
-		if args.ContextEngineId != "" {
-			cxtId, _ = engineIdToBytes(args.ContextEngineId)
-		} else {
-			cxtId = u.AuthEngineId
-		}
-		if !bytes.Equal(cxtId, p.ContextEngineId) {
-			return ResponseError{
-				Message: fmt.Sprintf("ContextEngineId mismatch - expected [%s], actual [%s]",
-					ToHexStr(cxtId, ""), ToHexStr(p.ContextEngineId, "")),
-			}
-		}
-		if name := args.ContextName; name != string(p.ContextName) {
-			return ResponseError{
-				Message: fmt.Sprintf("ContextName mismatch - expected [%s], actual [%s]",
-					name, string(p.ContextName)),
-			}
-		}
+		// var cxtId []byte
+		// if args.ContextEngineId != "" {
+		// 	cxtId, _ = engineIdToBytes(args.ContextEngineId)
+		// } else {
+		// 	cxtId = u.AuthEngineId
+		// }
+		// if !bytes.Equal(cxtId, p.ContextEngineId) {
+		// 	return ResponseError{
+		// 		Message: fmt.Sprintf("ContextEngineId mismatch - expected [%s], actual [%s]",
+		// 			ToHexStr(cxtId, ""), ToHexStr(p.ContextEngineId, "")),
+		// 	}
+		// }
+		// if name := args.ContextName; name != string(p.ContextName) {
+		// 	return ResponseError{
+		// 		Message: fmt.Sprintf("ContextName mismatch - expected [%s], actual [%s]",
+		// 			name, string(p.ContextName)),
+		// 	}
+		// }
 		// if sm.Authentication() && !rm.Authentication() {
 		// 	return ResponseError{
 		// 		Message: "Response message is not authenticated",
@@ -390,6 +391,8 @@ func mac(msg *MessageV3, proto AuthProtocol, key []byte) ([]byte, error) {
 		h = hmac.New(md5.New, key)
 	case Sha:
 		h = hmac.New(sha1.New, key)
+	default:
+		return nil, errors.New("'" + fmt.Sprint(proto) + "' is unsupported hash.")
 	}
 	h.Write(msgBytes)
 	return h.Sum(nil)[:12], nil
@@ -405,6 +408,8 @@ func encrypt(msg *MessageV3, proto PrivProtocol, key []byte) (err error) {
 	case Aes:
 		dst, priv, err = EncryptAES(
 			src, key, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime), genSalt64())
+	default:
+		err = errors.New("'" + fmt.Sprint(proto) + "' is unsupported crypto.")
 	}
 	if err != nil {
 		return
@@ -439,6 +444,8 @@ func decrypt(msg *MessageV3, proto PrivProtocol, key, privParam []byte) (err err
 	case Aes:
 		dst, err = DecryptAES(
 			raw.Bytes, key, privParam, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime))
+	default:
+		err = errors.New("'" + fmt.Sprint(proto) + "' is unsupported crypto.")
 	}
 
 	if err == nil {
@@ -448,7 +455,6 @@ func decrypt(msg *MessageV3, proto PrivProtocol, key, privParam []byte) (err err
 }
 
 func EncryptDES(src, key []byte, engineBoots, salt int32) (dst, privParam []byte, err error) {
-
 	block, err := des.NewCipher(key[:8])
 	if err != nil {
 		return
@@ -469,7 +475,6 @@ func EncryptDES(src, key []byte, engineBoots, salt int32) (dst, privParam []byte
 }
 
 func DecryptDES(src, key, privParam []byte) (dst []byte, err error) {
-
 	if len(src)%des.BlockSize != 0 {
 		err = ArgumentError{
 			Value:   len(src),

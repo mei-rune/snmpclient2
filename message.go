@@ -9,12 +9,19 @@ import (
 // +----------------------------------+
 // |  version  |  community   |  pdu  |
 // +----------------------------------+
-
-//  snmp messsage v3
-// +--------------------------------------------------------------------------------------------------------------------------------+
-// |  version  |  request_id   |  max_size  |  flags  |  security_model  |  security_params  |  context_engine_id  |  context_name  |
-// +--------------------------------------------------------------------------------------------------------------------------------+
-
+//
+//
+//                                                                                       |<------------ ScopedPdu ---------->|
+//                  +--------------------------------------------------------------------------------------------------------+
+// snmpv3 message   | version  | RequestID |  MaxSize |  Flag  | security   | Security   | context  | context |    PDU       |
+//                  |          |           |          |        |   Model    | parameters | engineId |  name   |              |
+//                  +--------------------------------------------------------------------------------------------------------+
+//
+//                                                                                       +-----------------------------------+
+// ScopedPdu                                                                             | context  | context |    PDU       |
+//                                                                                       | engineId |  name   |              |
+//                                                                                       +-----------------------------------+
+//
 type Message interface {
 	Version() SnmpVersion
 	PDU() PDU
@@ -220,8 +227,12 @@ type securityParameterV3 struct {
 	AuthEngineBoots int64
 	AuthEngineTime  int64
 	UserName        []byte
-	AuthParameter   []byte
-	PrivParameter   []byte
+	// If the packet has been authenticated, then this field contains the computed HMAC-MD5 or HMAC-SHA message digest for the packet.
+	// 如果包是认证过的, 那么这个字段包含计算好的该包的 HMAC-MD5 或 HMAC-SHA 消息摘要.
+	AuthParameter []byte
+	// If the scopedPDU of the packet has been encrypted, then this field contains the salt (i.e. random variant) that was used as input to the DES algorithm.
+	// 如果包的 scopedPDU 是被加密过的, 那么这个字段包含用于DES算法输入的 salt (例如 随机变量).
+	PrivParameter []byte
 }
 
 func (sec *securityParameterV3) Marshal() ([]byte, error) {
@@ -261,10 +272,48 @@ func (sec *securityParameterV3) String() string {
 		ToHexStr(sec.AuthParameter, ":"), ToHexStr(sec.PrivParameter, ":"))
 }
 
-// snmp messsage v3
-// +--------------------------------------------------------------------------------------------------------------------------------+
-// |  version  |  request_id   |  max_size  |  flags  |  security_model  |  security_params  |  context_engine_id  |  context_name  |
-// +--------------------------------------------------------------------------------------------------------------------------------+
+//
+//                                                                                       |<------------ ScopedPdu ---------->|
+//                  +--------------------------------------------------------------------------------------------------------+
+// snmpv3 message   | version  | RequestID |  MaxSize |  Flag  | security   | Security   | context  | context |    PDU       |
+//                  |          |           |          |        |   Model    | parameters | engineId |  name   |              |
+//                  +--------------------------------------------------------------------------------------------------------+
+//
+//                                                                                       +-----------------------------------+
+// ScopedPdu                                                                             | context  | context |    PDU       |
+//                                                                                       | engineId |  name   |              |
+//                                                                                       +-----------------------------------+
+//
+//
+//
+//                     SNMPv3 Packet Format
+//
+//                   -------------------------
+//     /|\           | msgVersion            |
+//      |            |-----------------------|
+//      |            | msgID                 |
+//      |            |-----------------------|         USM Security Parameters
+//      |            | msgMaxSize            |
+//      |            |-----------------------|    /-------------------------------
+//      |            | msgFlags              |   / | msgAuthoritativeEngineID    |
+//   scope of        |-----------------------|  /  |-----------------------------|
+// authentication    | msgSecurityModel      | /   | msgAuthoritativeEngineBoots |
+//      |            |-----------------------|/    |-----------------------------|
+//      |            |                       |     | msgAuthoritativeEngineTime  |
+//      |            | msgSecurityParameters |     |-----------------------------|
+//      |            |                       |     | msgUserName                 |
+//      |            |-----------------------|\    |-----------------------------|
+//      |     /|\    |                       | \   | msgAuthenticationParameters |
+//      |      |     |                       |  \  |-----------------------------|
+//      |      |     |                       |   \ | msgPrivacyParameters        |
+//      |  scope of  | scopedPDU             |    \-------------------------------
+//      | encryption |                       |
+//      |      |     |                       |
+//      |      |     |                       |
+//      |      |     |                       |
+//     \|/    \|/    |                       |
+//                   -------------------------
+//
 type MessageV3 struct {
 	globalDataV3
 	securityParameterV3

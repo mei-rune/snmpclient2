@@ -110,7 +110,7 @@ func TestCommunity(t *testing.T) {
 	}
 }
 
-func TestUsm(t *testing.T) {
+func aTestUsm(t *testing.T) {
 	expUser := []byte("myUser")
 	expEngId := []byte{0x80, 0x00, 0x00, 0x00, 0x01}
 	expCtxId := []byte{0x80, 0x00, 0x00, 0x00, 0x05}
