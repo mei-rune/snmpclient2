@@ -32,7 +32,7 @@ import (
 //
 // snmpv2 message    same as v1
 //
-//                                                                          |<------------------ ScopedPdu ----------------->|
+//                                                                                       |<------------ ScopedPdu ---------->|
 //                  +--------------------------------------------------------------------------------------------------------+
 // snmpv3 message   | version  | RequestID |  MaxSize |  Flag  | security   | Security   | context  | context |    PDU       |
 //                  |          |           |          |        |   Model    | parameters | engineId |  name   |              |
