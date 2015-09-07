@@ -289,6 +289,31 @@ func (s *SNMP) V2Trap(VariableBindings VariableBindings) error {
 	return s.v2trap(SNMPTrapV2, VariableBindings)
 }
 
+func (s *SNMP) V1Trap(enterprise Oid, agentAddress Ipaddress, genericTrap int,
+	specificTrap int, VariableBindings VariableBindings) error {
+	if s.args.Version != V1 {
+		return ArgumentError{
+			Value:   s.args.Version,
+			Message: "Unsupported SNMP Version",
+		}
+	}
+
+	pdu := NewPduWithVarBinds(s.args.Version, Trap, VariableBindings).(*PduV1)
+	pdu.Enterprise = enterprise
+	pdu.AgentAddress = agentAddress
+	pdu.GenericTrap = genericTrap
+	pdu.SpecificTrap = specificTrap
+	pdu.Timestamp.Bytes = []byte{0}
+	pdu.Timestamp.BitLength = 0
+
+	var err error
+	retry(int(s.args.Retries), func() error {
+		_, err = s.sendPdu(pdu)
+		return err
+	})
+	return err
+}
+
 func (s *SNMP) InformRequest(VariableBindings VariableBindings) error {
 	return s.v2trap(InformRequest, VariableBindings)
 }
@@ -380,10 +405,12 @@ func (s *SNMP) String() string {
 }
 
 // Create a SNMP Object
-func NewSNMP(args Arguments) (*SNMP, error) {
+func NewSNMP(network, address string, args Arguments) (*SNMP, error) {
 	if err := args.validate(); err != nil {
 		return nil, err
 	}
 	args.setDefault()
-	return &SNMP{args: args}, nil
+	return &SNMP{Network: network,
+		Address: address,
+		args:    args}, nil
 }

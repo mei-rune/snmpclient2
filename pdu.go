@@ -325,23 +325,55 @@ func (pdu *PduV1) Marshal() (b []byte, err error) {
 	var buf []byte
 	raw := asn1.RawValue{Class: ClassContextSpecific, Tag: int(pdu.pduType), IsCompound: true}
 
-	buf, err = asn1.Marshal(pdu.requestId)
-	if err != nil {
-		return
-	}
-	raw.Bytes = buf
+	if Trap == pdu.pduType {
+		buf, err = pdu.Enterprise.Marshal()
+		if err != nil {
+			return
+		}
+		raw.Bytes = buf
 
-	buf, err = asn1.Marshal(pdu.errorStatus)
-	if err != nil {
-		return
-	}
-	raw.Bytes = append(raw.Bytes, buf...)
+		buf, err = pdu.AgentAddress.Marshal()
+		if err != nil {
+			return
+		}
+		raw.Bytes = append(raw.Bytes, buf...)
 
-	buf, err = asn1.Marshal(pdu.errorIndex)
-	if err != nil {
-		return
+		buf, err = asn1.Marshal(pdu.GenericTrap)
+		if err != nil {
+			return
+		}
+		raw.Bytes = append(raw.Bytes, buf...)
+
+		buf, err = asn1.Marshal(pdu.SpecificTrap)
+		if err != nil {
+			return
+		}
+		raw.Bytes = append(raw.Bytes, buf...)
+
+		buf, err = asn1.Marshal(pdu.Timestamp)
+		if err != nil {
+			return
+		}
+		raw.Bytes = append(raw.Bytes, buf...)
+	} else {
+		buf, err = asn1.Marshal(pdu.requestId)
+		if err != nil {
+			return
+		}
+		raw.Bytes = buf
+
+		buf, err = asn1.Marshal(pdu.errorStatus)
+		if err != nil {
+			return
+		}
+		raw.Bytes = append(raw.Bytes, buf...)
+
+		buf, err = asn1.Marshal(pdu.errorIndex)
+		if err != nil {
+			return
+		}
+		raw.Bytes = append(raw.Bytes, buf...)
 	}
-	raw.Bytes = append(raw.Bytes, buf...)
 
 	VariableBindings := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
 	for i := 0; i < len(pdu.variableBindings); i++ {
@@ -357,7 +389,6 @@ func (pdu *PduV1) Marshal() (b []byte, err error) {
 		return
 	}
 	raw.Bytes = append(raw.Bytes, buf...)
-
 	return asn1.Marshal(raw)
 }
 
