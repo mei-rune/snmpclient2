@@ -94,7 +94,7 @@ func TestSNMPArguments(t *testing.T) {
 }
 
 func TestSNMP(t *testing.T) {
-	snmp, _ := snmpclient2.NewSNMP(snmpclient2.Arguments{
+	snmp, _ := snmpclient2.NewSNMP("udp", "127.0.0.1", snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
 		UserName:      "MyName",
 		SecurityLevel: snmpclient2.AuthPriv,

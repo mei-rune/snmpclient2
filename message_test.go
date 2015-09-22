@@ -96,7 +96,7 @@ func TestMessageV3(t *testing.T) {
 }
 
 func TestMessageProcessingV1(t *testing.T) {
-	snmp, _ := snmpclient2.NewSNMP(snmpclient2.Arguments{
+	snmp, _ := snmpclient2.NewSNMP("udp", "127.0.0.1", snmpclient2.Arguments{
 		Version:   snmpclient2.V2c,
 		Community: "public",
 	})
@@ -147,7 +147,7 @@ func TestMessageProcessingV1(t *testing.T) {
 }
 
 func TestMessageProcessingV3(t *testing.T) {
-	snmp, _ := snmpclient2.NewSNMP(snmpclient2.Arguments{
+	snmp, _ := snmpclient2.NewSNMP("udp", "127.0.0.1", snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
 		UserName:      "myName",
 		SecurityLevel: snmpclient2.AuthPriv,

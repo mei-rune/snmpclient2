@@ -376,6 +376,11 @@ func (self *UdpServer) on_v2(addr net.Addr, p *MessageV1, cached_bytes []byte) {
 		log.Println("[", self.name, "] snmp type is not supported.")
 	}
 
+	err := NewCommunity().GenerateRequestMessage(&Arguments{Community: ""}, res)
+	if err != nil {
+		return
+	}
+
 	s, err := res.Marshal()
 	if err != nil {
 		return

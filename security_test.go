@@ -75,7 +75,7 @@ func TestCipher(t *testing.T) {
 
 func TestCommunity(t *testing.T) {
 	expCom := "public"
-	snmp, _ := snmpclient2.NewSNMP(snmpclient2.Arguments{
+	snmp, _ := snmpclient2.NewSNMP("udp", "127.0.0.1", snmpclient2.Arguments{
 		Version:   snmpclient2.V2c,
 		Community: expCom,
 	})
@@ -115,17 +115,18 @@ func aTestUsm(t *testing.T) {
 	expEngId := []byte{0x80, 0x00, 0x00, 0x00, 0x01}
 	expCtxId := []byte{0x80, 0x00, 0x00, 0x00, 0x05}
 	expCtxName := "myName"
-	snmp, _ := snmpclient2.NewSNMP(snmpclient2.Arguments{
-		Version:         snmpclient2.V3,
-		UserName:        string(expUser),
-		SecurityLevel:   snmpclient2.AuthPriv,
-		AuthPassword:    "aaaaaaaa",
-		AuthProtocol:    snmpclient2.Md5,
-		PrivPassword:    "bbbbbbbb",
-		PrivProtocol:    snmpclient2.Des,
-		ContextEngineId: hex.EncodeToString(expCtxId),
-		ContextName:     expCtxName,
-	})
+	snmp, _ := snmpclient2.NewSNMP("udp", "127.0.0.1",
+		snmpclient2.Arguments{
+			Version:         snmpclient2.V3,
+			UserName:        string(expUser),
+			SecurityLevel:   snmpclient2.AuthPriv,
+			AuthPassword:    "aaaaaaaa",
+			AuthProtocol:    snmpclient2.Md5,
+			PrivPassword:    "bbbbbbbb",
+			PrivProtocol:    snmpclient2.Des,
+			ContextEngineId: hex.EncodeToString(expCtxId),
+			ContextName:     expCtxName,
+		})
 	sec := snmpclient2.NewUsm().(*snmpclient2.USM)
 	pdu := snmpclient2.NewPdu(snmpclient2.V3, snmpclient2.GetRequest)
 	spdu := pdu.(*snmpclient2.ScopedPdu)
