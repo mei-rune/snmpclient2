@@ -383,7 +383,7 @@ func ParseOidFromString(s string) (Oid, error) {
 			continue
 		}
 
-		if num, err := strconv.Atoi(v); err == nil && num >= 0 {
+		if num, err := strconv.ParseUint(v, 10, 32); err == nil && num >= 0 {
 			result = append(result, int(num))
 			continue
 		}
@@ -391,7 +391,7 @@ func ParseOidFromString(s string) (Oid, error) {
 		if 0 != idx {
 			return EmptyOID, ArgumentError{
 				Value:   s,
-				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, math.MaxUint32),
+				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, uint32(math.MaxUint32)),
 			}
 		}
 
@@ -417,10 +417,9 @@ func ParseOidFromString(s string) (Oid, error) {
 		default:
 			return EmptyOID, ArgumentError{
 				Value:   s,
-				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, math.MaxInt32),
+				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, uint32(math.MaxUint32)),
 			}
 		}
-
 	}
 	return Oid{result}, nil
 }
