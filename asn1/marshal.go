@@ -243,12 +243,19 @@ func marshalObjectIdentifier(out *forkableWriter, oid []int) (err error) {
 	if len(oid) < 1 {
 		return StructuralError{"invalid object identifier"}
 	}
+	if len(oid) < 2 {
+		err = marshalBase128Int(out, int64(oid[0])*40)
+		if err != nil {
+			return
+		}
+		return
+	}
 
-	//err = marshalBase128Int(out, int64(oid[0]*40+oid[1]))
-	//if err != nil {
-	//	return
-	//}
-	for i := 0; i < len(oid); i++ {
+	err = marshalBase128Int(out, int64(oid[0]*40+oid[1]))
+	if err != nil {
+		return
+	}
+	for i := 2; i < len(oid); i++ {
 		err = marshalBase128Int(out, int64(oid[i]))
 		if err != nil {
 			return
