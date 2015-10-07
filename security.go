@@ -8,13 +8,14 @@ import (
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha1"
-	"encoding/asn1"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"hash"
 	"math"
 	"time"
+
+	"github.com/runner-mei/snmpclient2/asn1"
 )
 
 type Security interface {
@@ -26,16 +27,16 @@ type Security interface {
 
 type community struct{}
 
-func (c *community) GenerateRequestMessage(args *Arguments, sendMsg Message) (err error) {
+func (c *community) GenerateRequestMessage(args *Arguments, sendMsg Message) error {
 	m := sendMsg.(*MessageV1)
 	m.Community = []byte(args.Community)
 
 	b, err := m.PDU().Marshal()
 	if err != nil {
-		return
+		return err
 	}
 	m.SetPduBytes(b)
-	return
+	return nil
 }
 
 func (c *community) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err error) {

@@ -1,8 +1,9 @@
 package snmpclient2
 
 import (
-	"encoding/asn1"
 	"fmt"
+
+	"github.com/runner-mei/snmpclient2/asn1"
 )
 
 //  snmp messsage v1 or v2

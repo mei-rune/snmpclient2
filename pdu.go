@@ -1,10 +1,11 @@
 package snmpclient2
 
 import (
-	"encoding/asn1"
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/runner-mei/snmpclient2/asn1"
 )
 
 // The protocol data unit of SNMP

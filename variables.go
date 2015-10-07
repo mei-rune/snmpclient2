@@ -1,7 +1,6 @@
 package snmpclient2
 
 import (
-	"encoding/asn1"
 	"encoding/hex"
 	"fmt"
 	"math"
@@ -10,6 +9,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/runner-mei/snmpclient2/asn1"
 )
 
 const (
@@ -395,10 +396,17 @@ func ParseOidFromString(s string) (Oid, error) {
 			}
 		}
 
+		// Value   Name
+		//   0     ccitt
+		//   1     iso
+		//   2     joint-iso-ccitt
+
 		switch v {
+		case "ccitt":
+			result = append(result, 0)
 		case "iso":
 			result = append(result, 1)
-		case "ccitt":
+		case "joint_ccitt_iso":
 			result = append(result, 2)
 		case "iso/ccitt":
 			result = append(result, 3)

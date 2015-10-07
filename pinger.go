@@ -1,7 +1,6 @@
 package snmpclient2
 
 import (
-	"encoding/asn1"
 	"fmt"
 	"log"
 	"net"
@@ -9,6 +8,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/runner-mei/snmpclient2/asn1"
 )
 
 type PingResult struct {

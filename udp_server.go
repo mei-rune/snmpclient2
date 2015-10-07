@@ -2,7 +2,6 @@ package snmpclient2
 
 import (
 	"bytes"
-	"encoding/asn1"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/runner-mei/snmpclient2/asn1"
 )
 
 type OidAndValue struct {
@@ -378,15 +379,17 @@ func (self *UdpServer) on_v2(addr net.Addr, p *MessageV1, cached_bytes []byte) {
 
 	err := NewCommunity().GenerateRequestMessage(&Arguments{Community: ""}, res)
 	if err != nil {
+		log.Println("[", self.name, "] failed to generate request,", err)
 		return
 	}
 
 	s, err := res.Marshal()
 	if err != nil {
+		log.Println("[", self.name, "] failed to marshal,", err)
 		return
 	}
 	if _, e := self.conn.WriteTo(s, addr); nil != e {
-		log.Println("[warn]", e)
+		log.Println("[", self.name, "] failed to write response,", e)
 		return
 	}
 }
