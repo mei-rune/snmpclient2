@@ -469,11 +469,13 @@ func parseTagAndLength(bytes []byte, initOffset int) (ret tagAndLength, offset i
 			}
 			ret.length <<= 8
 			ret.length |= int(b)
-			if ret.length == 0 {
-				// DER requires that lengths be minimal.
-				err = StructuralError{"superfluous leading zeros in length"}
-				return
-			}
+
+			// 某些 snmp 包，长度的第一个字符为 0
+			// if ret.length == 0 {
+			// 	// DER requires that lengths be minimal.
+			// 	err = StructuralError{"superfluous leading zeros in length"}
+			// 	return
+			// }
 		}
 	}
 

@@ -32,8 +32,8 @@ func ParseString(ss []string, is_end bool, vs string) (Variable, []string, error
 		if re.MatchString(sss) {
 			p = idx
 			break
-		} else if strings.HasPrefix(sss, "#") ||
-			strings.Contains(sss, "MIB search path") ||
+		} else if strings.Contains(sss, "MIB search path") ||
+			//strings.HasPrefix(sss, "#") ||
 			strings.Contains(sss, "Cannot find module") {
 			p = idx
 			break
