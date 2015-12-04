@@ -367,9 +367,18 @@ func (v *Oid) AppendSubIds(subs []int) Oid {
 	return NewOid(append(v.Value, subs...))
 }
 
+func ConcatOidString(oid Oid, s string) Oid {
+	ints, e := ParseIntsFromString(s)
+	if nil != e {
+		panic(e)
+	}
+
+	return NewOid(append(oid.Value, ints...))
+}
+
 var EmptyOID Oid
 
-func ParseOidFromString(s string) (Oid, error) {
+func ParseIntsFromString(s string) ([]int, error) {
 	ss := strings.Split(strings.Trim(s, "."), ".")
 	if 2 > len(ss) {
 		ss = strings.Split(strings.Trim(s, "_"), "_")
@@ -379,7 +388,7 @@ func ParseOidFromString(s string) (Oid, error) {
 	for idx, v := range ss {
 		if 0 == len(v) {
 			if 0 != idx {
-				return EmptyOID, fmt.Errorf("oid is syntex error, value is %s", s)
+				return nil, fmt.Errorf("oid is syntex error, value is %s", s)
 			}
 			continue
 		}
@@ -390,7 +399,7 @@ func ParseOidFromString(s string) (Oid, error) {
 		}
 
 		if 0 != idx {
-			return EmptyOID, ArgumentError{
+			return nil, ArgumentError{
 				Value:   s,
 				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, uint32(math.MaxUint32)),
 			}
@@ -423,13 +432,18 @@ func ParseOidFromString(s string) (Oid, error) {
 		case "SNMPv2-SMI::security":
 			result = append(result, 1, 3, 6, 1, 5)
 		default:
-			return EmptyOID, ArgumentError{
+			return nil, ArgumentError{
 				Value:   s,
 				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, uint32(math.MaxUint32)),
 			}
 		}
 	}
-	return Oid{result}, nil
+	return result, nil
+}
+
+func ParseOidFromString(s string) (Oid, error) {
+	ints, e := ParseIntsFromString(s)
+	return Oid{ints}, e
 }
 
 func NewOid(oid []int) Oid {
