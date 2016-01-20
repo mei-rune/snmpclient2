@@ -190,7 +190,15 @@ func ParseLine(ss []string, is_end bool) (*Oid, Variable, []string, error) {
 	var v Variable
 	//var remain []string
 
-	if "STRING" == t {
+	if "Opaque" == t {
+		tv = strings.SplitN(tv[1], ":", 2)
+		if 2 == len(tv) && "Float" == strings.TrimSpace(tv[0]) {
+			return &oid, NewOctetString(bytes.TrimSpace([]byte(tv[1]))), nil, nil
+		}
+
+		v, rr, e := ParseString(ss, is_end, tv[1])
+		return &oid, v, rr, e
+	} else if "STRING" == t {
 		v, rr, e := ParseString(ss, is_end, tv[1])
 		return &oid, v, rr, e
 	} else if "Hex-STRING" == t {
