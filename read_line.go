@@ -34,7 +34,8 @@ func ParseString(ss []string, is_end bool, vs string) (Variable, []string, error
 			break
 		} else if strings.Contains(sss, "MIB search path") ||
 			//strings.HasPrefix(sss, "#") ||
-			strings.Contains(sss, "Cannot find module") {
+			strings.Contains(sss, "Cannot find module") ||
+			strings.Contains(sss, "#tools\\snmpwalk.exe") {
 			p = idx
 			break
 		}
@@ -97,7 +98,8 @@ func ParseHexString(ss []string, is_end bool, vs string) (Variable, []string, er
 			break
 		} else if strings.HasPrefix(sss, "#") ||
 			strings.Contains(sss, "MIB search path") ||
-			strings.Contains(sss, "Cannot find module") {
+			strings.Contains(sss, "Cannot find module") ||
+			strings.Contains(sss, "#tools\\snmpwalk.exe") {
 			p = idx
 			break
 		}
