@@ -1,0 +1,13 @@
+language: go
+go: 1.3
+install:
+  - export PATH=$PATH:$HOME/gopath/bin
+  
+services:
+
+before_script:
+
+script:
+  - go test -v
+  - cd asn1
+  - go test -v
