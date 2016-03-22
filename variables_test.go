@@ -202,6 +202,24 @@ func TestOid(t *testing.T) {
 	if expStr != w.ToString() {
 		t.Errorf("Unmarshal() with rest - expected [%s], actual [%s]", expStr, w.ToString())
 	}
+
+	oid := snmpclient2.Oid{Value: []int{1, 3, 6, 1, 4, 1, 9, 10, 138, 1, 4, 1, 2, 1, -1073741823}}
+
+	exceptedOid := "1.3.6.1.4.1.9.10.138.1.4.1.2.1.3221225473"
+	if exceptedOid != oid.ToString() {
+		t.Error("excepted is ", exceptedOid, "actual is", oid.ToString())
+	}
+
+	bs, e := oid.Marshal()
+	if nil != e {
+		t.Error(e)
+	}
+
+	exceptedBytes := []byte{6, 19, 43, 6, 1, 4, 1, 9, 10, 129, 10, 1, 4, 1, 2, 1, 140, 128, 128, 128, 1}
+	if !bytes.Equal(bs, exceptedBytes) {
+		t.Error("excepted is ", exceptedBytes, "actual is", bs)
+	}
+
 }
 
 func TestOidOperation(t *testing.T) {
