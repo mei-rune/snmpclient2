@@ -256,7 +256,11 @@ func marshalObjectIdentifier(out *forkableWriter, oid []int) (err error) {
 		return
 	}
 	for i := 2; i < len(oid); i++ {
-		err = marshalBase128Int(out, int64(oid[i]))
+		if oid[i] < 0 {
+			err = marshalBase128Int(out, int64(uint32(oid[i])))
+		} else {
+			err = marshalBase128Int(out, int64(oid[i]))
+		}
 		if err != nil {
 			return
 		}

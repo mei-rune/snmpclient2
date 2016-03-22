@@ -291,12 +291,25 @@ func (v *Oid) Bytes() []byte {
 	panic(UnsupportedOperation)
 }
 
+var dot_bytes = []byte(".")
+
 func (v *Oid) ToString() string {
-	return asn1.ObjectIdentifier(v.Value).String()
+	bs := make([]byte, 0, 3*len(v.Value)+60)
+
+	for _, oi := range v.Value {
+		bs = strconv.AppendUint(bs, uint64(uint32(oi)), 10)
+		bs = append(bs, dot_bytes...)
+	}
+
+	if len(bs) > len(dot_bytes) {
+		bs = bs[:len(bs)-len(dot_bytes)]
+	}
+
+	return string(bs)
 }
 
 func (v *Oid) String() string {
-	return "[oid]" + asn1.ObjectIdentifier(v.Value).String()
+	return "[oid]" + v.ToString()
 }
 
 func (v *Oid) MarshalJSON() ([]byte, error) {
