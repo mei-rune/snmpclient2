@@ -219,7 +219,6 @@ func TestOid(t *testing.T) {
 	if !bytes.Equal(bs, exceptedBytes) {
 		t.Error("excepted is ", exceptedBytes, "actual is", bs)
 	}
-
 }
 
 func TestOidOperation(t *testing.T) {
