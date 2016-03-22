@@ -3,6 +3,8 @@ package snmpclient2
 import (
 	"strconv"
 	"time"
+
+	"github.com/runner-mei/snmpclient2/asn1"
 )
 
 type SnmpVersion int
@@ -178,61 +180,61 @@ const (
 	mega           = 1 << 20
 )
 
-// ASN.1 Class
-const (
-	ClassUniversal = iota
-	ClassApplication
-	ClassContextSpecific
-	ClassPrivate
-)
+// // ASN.1 Class
+// const (
+// 	ClassUniversal = iota
+// 	ClassApplication
+// 	ClassContextSpecific
+// 	ClassPrivate
+// )
 
 // ASN.1 Tag
 const (
-	SYNTAX_INTEGER        = 0x02
-	SYNTAX_OCTETSTRING    = 0x04
-	SYNTAX_NULL           = 0x05
-	SYNTAX_OID            = 0x06
-	SYNTAX_SEQUENCE       = 0x10
-	SYNTAX_IPADDRESS      = 0x40
-	SYNTAX_COUNTER32      = 0x41
-	SYNTAX_GAUGE32        = 0x42
-	SYNTAX_TIMETICKS      = 0x43
-	SYNTAX_OPAQUE         = 0x44
-	SYNTAX_COUNTER64      = 0x46
-	SYNTAX_NOSUCHOBJECT   = 0x80
-	SYNTAX_NOSUCHINSTANCE = 0x81
-	SYNTAX_ENDOFMIBVIEW   = 0x82
+// asn1.TagInteger        = 0x02
+// asn1.TagOctetString    = 0x04
+// asn1.TagNull           = 0x05
+// asn1.TagOID            = 0x06
+// asn1.TagSequence       = 0x10
+// asn1.TagIPAddress      = 0x40
+// asn1.TagCounter32      = 0x41
+// asn1.TagGauge32        = 0x42
+// asn1.TagTimeticks      = 0x43
+// asn1.TagOpaque         = 0x44
+// asn1.TagCounter64      = 0x46
+// asn1.TagNoSuchObject   = 0x80
+// asn1.TagNoSuchInstance = 0x81
+// asn1.TagEndOfMibView   = 0x82
 )
 
 func ToSyntexString(t int) string {
 	switch t {
-	case SYNTAX_INTEGER:
+	case asn1.TagInteger:
 		return "int"
-	case SYNTAX_OCTETSTRING:
+	case asn1.TagOctetString:
 		return "octets"
-	case SYNTAX_NULL:
+	case asn1.TagNull:
 		return "null"
-	case SYNTAX_OID:
+	case asn1.TagOID:
 		return "oid"
-	case SYNTAX_SEQUENCE:
+	case asn1.TagSequence:
 		return "sequence"
-	case SYNTAX_IPADDRESS:
+	case asn1.TagIPAddress:
 		return "ip"
-	case SYNTAX_COUNTER32:
+	case asn1.TagCounter32:
 		return "counter32"
-	case SYNTAX_GAUGE32:
+	case asn1.TagGauge32:
 		return "gauge32"
-	case SYNTAX_TIMETICKS:
+	case asn1.TagTimeticks:
 		return "timeticks"
-	case SYNTAX_OPAQUE:
+	case asn1.TagOpaque:
 		return "opaque"
-	case SYNTAX_COUNTER64:
+	case asn1.TagCounter64:
 		return "counter64"
-	case SYNTAX_NOSUCHOBJECT:
+	case asn1.TagNoSuchObject:
 		return "NOSUCHOBJECT"
-	case SYNTAX_NOSUCHINSTANCE:
+	case asn1.TagNoSuchInstance:
 		return "NOSUCHINSTANCE"
-	case SYNTAX_ENDOFMIBVIEW:
+	case asn1.TagEndOfMibView:
 		return "ENDOFMIBVIEW"
 	default:
 		return strconv.FormatInt(int64(t), 10)

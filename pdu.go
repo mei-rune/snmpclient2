@@ -78,7 +78,7 @@ type VariableBinding struct {
 
 func (v *VariableBinding) Marshal() (b []byte, err error) {
 	var buf []byte
-	raw := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
+	raw := asn1.RawValue{Class: asn1.ClassUniversal, Tag: asn1.TagSequence, IsCompound: true}
 
 	if v.Variable == nil {
 		return asn1.Marshal(raw)
@@ -105,7 +105,7 @@ func (v *VariableBinding) Unmarshal(b []byte) (rest []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	if raw.Class != ClassUniversal || raw.Tag != SYNTAX_SEQUENCE || !raw.IsCompound {
+	if raw.Class != asn1.ClassUniversal || raw.Tag != asn1.TagSequence || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid VariableBinding object - Class [%02x], Tag [%02x] : [%s]",
 			raw.Class, raw.Tag, ToHexStr(b, " "))}
@@ -324,7 +324,7 @@ func (pdu *PduV1) VariableBindings() VariableBindings {
 
 func (pdu *PduV1) Marshal() (b []byte, err error) {
 	var buf []byte
-	raw := asn1.RawValue{Class: ClassContextSpecific, Tag: int(pdu.pduType), IsCompound: true}
+	raw := asn1.RawValue{Class: asn1.ClassContextSpecific, Tag: int(pdu.pduType), IsCompound: true}
 
 	if Trap == pdu.pduType {
 		buf, err = pdu.Enterprise.Marshal()
@@ -376,7 +376,7 @@ func (pdu *PduV1) Marshal() (b []byte, err error) {
 		raw.Bytes = append(raw.Bytes, buf...)
 	}
 
-	VariableBindings := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
+	VariableBindings := asn1.RawValue{Class: asn1.ClassUniversal, Tag: asn1.TagSequence, IsCompound: true}
 	for i := 0; i < len(pdu.variableBindings); i++ {
 		buf, err = pdu.variableBindings[i].Marshal()
 		if err != nil {
@@ -399,7 +399,7 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 	if err != nil {
 		return
 	}
-	if raw.Class != ClassContextSpecific || !raw.IsCompound {
+	if raw.Class != asn1.ClassContextSpecific || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid PDU object - Class [%02x], Tag [%02x] : [%s]",
 			raw.Class, raw.Tag, ToHexStr(b, " "))}
@@ -482,7 +482,7 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 	if err != nil {
 		return
 	}
-	if VariableBindings.Class != ClassUniversal || VariableBindings.Tag != SYNTAX_SEQUENCE || !VariableBindings.IsCompound {
+	if VariableBindings.Class != asn1.ClassUniversal || VariableBindings.Tag != asn1.TagSequence || !VariableBindings.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid VariableBindings object - Class [%02x], Tag [%02x] : [%s]",
 			VariableBindings.Class, VariableBindings.Tag, ToHexStr(next, " "))}
@@ -529,7 +529,7 @@ type ScopedPdu struct {
 
 func (pdu *ScopedPdu) Marshal() (b []byte, err error) {
 	var buf []byte
-	raw := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
+	raw := asn1.RawValue{Class: asn1.ClassUniversal, Tag: asn1.TagSequence, IsCompound: true}
 
 	buf, err = asn1.Marshal(pdu.ContextEngineId)
 	if err != nil {
@@ -558,7 +558,7 @@ func (pdu *ScopedPdu) Unmarshal(b []byte) (rest []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	if raw.Class != ClassUniversal || raw.Tag != SYNTAX_SEQUENCE || !raw.IsCompound {
+	if raw.Class != asn1.ClassUniversal || raw.Tag != asn1.TagSequence || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid ScopedPud object - Class [%02x], Tag [%02x] : [%s]",
 			raw.Class, raw.Tag, ToHexStr(b, " "))}

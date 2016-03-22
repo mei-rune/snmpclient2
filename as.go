@@ -3,6 +3,8 @@ package snmpclient2
 import (
 	"errors"
 	"math"
+
+	"github.com/runner-mei/snmpclient2/asn1"
 )
 
 func AsInt(value Variable) (int, error) {
@@ -18,11 +20,11 @@ func AsUint(value Variable) (uint, error) {
 // Int type AsSerts to `float64` then converts to `int`
 func AsInt64(value Variable) (int64, error) {
 	switch value.Syntex() {
-	case SYNTAX_INTEGER:
+	case asn1.TagInteger:
 		return value.Int(), nil
-	case SYNTAX_GAUGE32, SYNTAX_COUNTER32, SYNTAX_TIMETICKS:
+	case asn1.TagGauge32, asn1.TagCounter32, asn1.TagTimeticks:
 		return value.Int(), nil
-	case SYNTAX_COUNTER64:
+	case asn1.TagCounter64:
 		if math.MaxInt64 < value.Uint() {
 			return 0, errors.New("type Assertion to int64 failed, it is too big.")
 		}
@@ -33,9 +35,9 @@ func AsInt64(value Variable) (int64, error) {
 
 func AsInt32(value Variable) (int32, error) {
 	switch value.Syntex() {
-	case SYNTAX_INTEGER:
+	case asn1.TagInteger:
 		return int32(value.Int()), nil
-	case SYNTAX_GAUGE32, SYNTAX_COUNTER32, SYNTAX_TIMETICKS, SYNTAX_COUNTER64:
+	case asn1.TagGauge32, asn1.TagCounter32, asn1.TagTimeticks, asn1.TagCounter64:
 		u32 := value.Uint()
 		if math.MaxInt32 < u32 {
 			return 0, errors.New("type Assertion to int32 failed, it is too big.")
@@ -48,11 +50,11 @@ func AsInt32(value Variable) (int32, error) {
 // Uint type AsSerts to `float64` then converts to `int`
 func AsUint64(value Variable) (uint64, error) {
 	switch value.Syntex() {
-	case SYNTAX_INTEGER:
+	case asn1.TagInteger:
 		if 0 <= value.Int() {
 			return uint64(value.Int()), nil
 		}
-	case SYNTAX_GAUGE32, SYNTAX_COUNTER32, SYNTAX_TIMETICKS, SYNTAX_COUNTER64:
+	case asn1.TagGauge32, asn1.TagCounter32, asn1.TagTimeticks, asn1.TagCounter64:
 		return value.Uint(), nil
 	}
 	return 0, errors.New("type Assertion to uint64 failed")
@@ -60,13 +62,13 @@ func AsUint64(value Variable) (uint64, error) {
 
 func AsUint32(value Variable) (uint32, error) {
 	switch value.Syntex() {
-	case SYNTAX_INTEGER:
+	case asn1.TagInteger:
 		if 0 <= value.Int() {
 			return uint32(value.Int()), nil
 		}
-	case SYNTAX_GAUGE32, SYNTAX_COUNTER32, SYNTAX_TIMETICKS:
+	case asn1.TagGauge32, asn1.TagCounter32, asn1.TagTimeticks:
 		return uint32(value.Uint()), nil
-	case SYNTAX_COUNTER64:
+	case asn1.TagCounter64:
 		u64 := value.Uint()
 		if math.MaxUint32 < u64 {
 			return 0, errors.New("type AsUint32 to uint32 failed, it is too big.")

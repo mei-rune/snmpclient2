@@ -416,7 +416,7 @@ func encrypt(msg *MessageV3, proto PrivProtocol, key []byte) (err error) {
 		return
 	}
 
-	raw := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_OCTETSTRING, IsCompound: false}
+	raw := asn1.RawValue{Class: asn1.ClassUniversal, Tag: asn1.TagOctetString, IsCompound: false}
 	raw.Bytes = dst
 	dst, err = asn1.Marshal(raw)
 	if err == nil {
@@ -432,7 +432,7 @@ func decrypt(msg *MessageV3, proto PrivProtocol, key, privParam []byte) (err err
 	if err != nil {
 		return
 	}
-	if raw.Class != ClassUniversal || raw.Tag != SYNTAX_OCTETSTRING || raw.IsCompound {
+	if raw.Class != asn1.ClassUniversal || raw.Tag != asn1.TagOctetString || raw.IsCompound {
 		return asn1.StructuralError{fmt.Sprintf(
 			"Invalid encrypted PDU object - Class [%02x], Tag [%02x] : [%s]",
 			raw.Class, raw.Tag, ToHexStr(msg.PduBytes(), " "))}

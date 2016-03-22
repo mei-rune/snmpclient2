@@ -266,7 +266,7 @@ func (self *UdpServer) serve() {
 				return
 			}
 
-			if raw.Class != ClassUniversal || raw.Tag != SYNTAX_SEQUENCE || !raw.IsCompound {
+			if raw.Class != asn1.ClassUniversal || raw.Tag != asn1.TagSequence || !raw.IsCompound {
 				log.Printf("["+self.name+"]Invalid MessageV3 object - Class [%02x], Tag [%02x] : [%s]",
 					raw.FullBytes[0], raw.Tag, ToHexStr(recv_bytes, " "))
 				return

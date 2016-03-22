@@ -58,7 +58,7 @@ func (msg *MessageV1) SetPduBytes(b []byte) {
 
 func (msg *MessageV1) Marshal() (b []byte, err error) {
 	var buf []byte
-	raw := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
+	raw := asn1.RawValue{Class: asn1.ClassUniversal, Tag: asn1.TagSequence, IsCompound: true}
 
 	buf, err = asn1.Marshal(msg.version)
 	if err != nil {
@@ -82,7 +82,7 @@ func (msg *MessageV1) Unmarshal(b []byte) (rest []byte, err error) {
 	if err != nil {
 		return
 	}
-	if raw.Class != ClassUniversal || raw.Tag != SYNTAX_SEQUENCE || !raw.IsCompound {
+	if raw.Class != asn1.ClassUniversal || raw.Tag != asn1.TagSequence || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid MessageV1 object - Class [%02x], Tag [%02x] : [%s]",
 			raw.Class, raw.Tag, ToHexStr(b, " "))}
@@ -237,7 +237,7 @@ type securityParameterV3 struct {
 }
 
 func (sec *securityParameterV3) Marshal() ([]byte, error) {
-	raw := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_OCTETSTRING, IsCompound: false}
+	raw := asn1.RawValue{Class: asn1.ClassUniversal, Tag: asn1.TagOctetString, IsCompound: false}
 
 	buf, err := asn1.Marshal(*sec)
 	if err != nil {
@@ -255,7 +255,7 @@ func (sec *securityParameterV3) Unmarshal(b []byte) (rest []byte, err error) {
 		return
 	}
 
-	if raw.Class != ClassUniversal || raw.Tag != SYNTAX_OCTETSTRING || raw.IsCompound {
+	if raw.Class != asn1.ClassUniversal || raw.Tag != asn1.TagOctetString || raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid SecurityParameter object - Class [%02x], Tag [%02x] : [%s]",
 			raw.Class, raw.Tag, ToHexStr(b, " "))}
@@ -323,7 +323,7 @@ type MessageV3 struct {
 
 func (msg *MessageV3) Marshal() (b []byte, err error) {
 	var buf []byte
-	raw := asn1.RawValue{Class: ClassUniversal, Tag: SYNTAX_SEQUENCE, IsCompound: true}
+	raw := asn1.RawValue{Class: asn1.ClassUniversal, Tag: asn1.TagSequence, IsCompound: true}
 
 	buf, err = asn1.Marshal(msg.version)
 	if err != nil {
@@ -353,10 +353,10 @@ func (msg *MessageV3) Unmarshal(b []byte) (rest []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	if raw.Class != ClassUniversal || raw.Tag != SYNTAX_SEQUENCE || !raw.IsCompound {
+	if raw.Class != asn1.ClassUniversal || raw.Tag != asn1.TagSequence || !raw.IsCompound {
 		return nil, asn1.StructuralError{fmt.Sprintf(
 			"Invalid MessageV3 object - Class [%02x], Tag [%02x] : [%s]",
-			raw.FullBytes[0], SYNTAX_SEQUENCE, ToHexStr(b, " "))}
+			raw.FullBytes[0], asn1.TagSequence, ToHexStr(b, " "))}
 	}
 
 	next := raw.Bytes

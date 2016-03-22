@@ -126,7 +126,7 @@ func (v *Integer) MarshalJSON() ([]byte, error) {
 }
 
 func (v *Integer) Syntex() int {
-	return SYNTAX_INTEGER
+	return asn1.TagInteger
 }
 
 func (v *Integer) Marshal() ([]byte, error) {
@@ -192,7 +192,7 @@ func (v *OctetString) MarshalJSON() ([]byte, error) {
 }
 
 func (v *OctetString) Syntex() int {
-	return SYNTAX_OCTETSTRING
+	return asn1.TagOctetString
 }
 
 func (v *OctetString) Marshal() ([]byte, error) {
@@ -200,7 +200,7 @@ func (v *OctetString) Marshal() ([]byte, error) {
 }
 
 func (v *OctetString) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalString(b, SYNTAX_OCTETSTRING, func(s []byte) { v.Value = s })
+	return unmarshalString(b, asn1.TagOctetString, func(s []byte) { v.Value = s })
 }
 
 func NewOctetString(b []byte) *OctetString {
@@ -250,15 +250,15 @@ func (v *Null) MarshalJSON() ([]byte, error) {
 }
 
 func (v *Null) Syntex() int {
-	return SYNTAX_NULL
+	return asn1.TagNull
 }
 
 func (v *Null) Marshal() ([]byte, error) {
-	return []byte{SYNTAX_NULL, 0}, nil
+	return []byte{asn1.TagNull, 0}, nil
 }
 
 func (v *Null) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalEmpty(b, SYNTAX_NULL)
+	return unmarshalEmpty(b, asn1.TagNull)
 }
 
 var null = &Null{}
@@ -317,7 +317,7 @@ func (v *Oid) MarshalJSON() ([]byte, error) {
 }
 
 func (v *Oid) Syntex() int {
-	return SYNTAX_OID
+	return asn1.TagOID
 }
 
 func (v *Oid) Marshal() ([]byte, error) {
@@ -583,19 +583,19 @@ func (v *Ipaddress) MarshalJSON() ([]byte, error) {
 }
 
 func (v *Ipaddress) Syntex() int {
-	return SYNTAX_IPADDRESS
+	return asn1.TagIPAddress
 }
 
 func (v *Ipaddress) Marshal() ([]byte, error) {
 	b, err := asn1.Marshal(v.Value)
 	if err == nil {
-		b[0] = SYNTAX_IPADDRESS
+		b[0] = asn1.TagIPAddress
 	}
 	return b, err
 }
 
 func (v *Ipaddress) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalString(b, SYNTAX_IPADDRESS, func(s []byte) { v.Value = s })
+	return unmarshalString(b, asn1.TagIPAddress, func(s []byte) { v.Value = s })
 }
 
 func NewIpaddress(a, b, c, d byte) *Ipaddress {
@@ -651,19 +651,19 @@ func (v *Counter32) MarshalJSON() ([]byte, error) {
 }
 
 func (v *Counter32) Syntex() int {
-	return SYNTAX_COUNTER32
+	return asn1.TagCounter32
 }
 
 func (v *Counter32) Marshal() ([]byte, error) {
 	b, err := asn1.Marshal(int64(v.Value))
 	if err == nil {
-		b[0] = SYNTAX_COUNTER32
+		b[0] = asn1.TagCounter32
 	}
 	return b, err
 }
 
 func (v *Counter32) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalInt(b, SYNTAX_COUNTER32, func(s *big.Int) { v.Value = uint32(s.Int64()) })
+	return unmarshalInt(b, asn1.TagCounter32, func(s *big.Int) { v.Value = uint32(s.Int64()) })
 }
 
 func NewCounter32(i uint32) *Counter32 {
@@ -691,19 +691,19 @@ func (v *Gauge32) MarshalJSON() ([]byte, error) {
 }
 
 func (v *Gauge32) Syntex() int {
-	return SYNTAX_GAUGE32
+	return asn1.TagGauge32
 }
 
 func (v *Gauge32) Marshal() ([]byte, error) {
 	b, err := asn1.Marshal(int64(v.Value))
 	if err == nil {
-		b[0] = SYNTAX_GAUGE32
+		b[0] = asn1.TagGauge32
 	}
 	return b, err
 }
 
 func (v *Gauge32) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalInt(b, SYNTAX_GAUGE32, func(s *big.Int) { v.Value = uint32(s.Int64()) })
+	return unmarshalInt(b, asn1.TagGauge32, func(s *big.Int) { v.Value = uint32(s.Int64()) })
 }
 
 func NewGauge32(i uint32) *Gauge32 {
@@ -731,19 +731,19 @@ func (v *TimeTicks) MarshalJSON() ([]byte, error) {
 }
 
 func (v *TimeTicks) Syntex() int {
-	return SYNTAX_TIMETICKS
+	return asn1.TagTimeticks
 }
 
 func (v *TimeTicks) Marshal() ([]byte, error) {
 	b, err := asn1.Marshal(int64(v.Value))
 	if err == nil {
-		b[0] = SYNTAX_TIMETICKS
+		b[0] = asn1.TagTimeticks
 	}
 	return b, err
 }
 
 func (v *TimeTicks) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalInt(b, SYNTAX_TIMETICKS, func(s *big.Int) { v.Value = uint32(s.Int64()) })
+	return unmarshalInt(b, asn1.TagTimeticks, func(s *big.Int) { v.Value = uint32(s.Int64()) })
 }
 
 func NewTimeTicks(i uint32) *TimeTicks {
@@ -775,19 +775,19 @@ func (v *Opaque) MarshalJSON() ([]byte, error) {
 }
 
 func (v *Opaque) Syntex() int {
-	return SYNTAX_OPAQUE
+	return asn1.TagOpaque
 }
 
 func (v *Opaque) Marshal() ([]byte, error) {
 	b, err := asn1.Marshal(v.Value)
 	if err == nil {
-		b[0] = SYNTAX_OPAQUE
+		b[0] = asn1.TagOpaque
 	}
 	return b, err
 }
 
 func (v *Opaque) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalString(b, SYNTAX_OPAQUE, func(s []byte) { v.Value = s })
+	return unmarshalString(b, asn1.TagOpaque, func(s []byte) { v.Value = s })
 }
 
 func NewOpaque(b []byte) *Opaque {
@@ -842,20 +842,20 @@ func (v *Counter64) String() string {
 }
 
 func (v *Counter64) Syntex() int {
-	return SYNTAX_COUNTER64
+	return asn1.TagCounter64
 }
 
 func (v *Counter64) Marshal() ([]byte, error) {
 	i := big.NewInt(0).SetUint64(v.Value)
 	b, err := asn1.Marshal(i)
 	if err == nil {
-		b[0] = SYNTAX_COUNTER64
+		b[0] = asn1.TagCounter64
 	}
 	return b, err
 }
 
 func (v *Counter64) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalInt(b, SYNTAX_COUNTER64, func(s *big.Int) { v.Value = s.Uint64() })
+	return unmarshalInt(b, asn1.TagCounter64, func(s *big.Int) { v.Value = s.Uint64() })
 }
 
 func NewCounter64(i uint64) *Counter64 {
@@ -895,15 +895,15 @@ func (v *NoSucheObject) MarshalJSON() ([]byte, error) {
 }
 
 func (v *NoSucheObject) Syntex() int {
-	return SYNTAX_NOSUCHOBJECT
+	return asn1.TagNoSuchObject
 }
 
 func (v *NoSucheObject) Marshal() ([]byte, error) {
-	return []byte{SYNTAX_NOSUCHOBJECT, 0}, nil
+	return []byte{asn1.TagNoSuchObject, 0}, nil
 }
 
 func (v *NoSucheObject) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalEmpty(b, SYNTAX_NOSUCHOBJECT)
+	return unmarshalEmpty(b, asn1.TagNoSuchObject)
 }
 
 var NOSUCHEOBJECT = &NoSucheObject{Null{}}
@@ -937,15 +937,15 @@ func (v *NoSucheInstance) MarshalJSON() ([]byte, error) {
 }
 
 func (v *NoSucheInstance) Syntex() int {
-	return SYNTAX_NOSUCHINSTANCE
+	return asn1.TagNoSuchInstance
 }
 
 func (v *NoSucheInstance) Marshal() ([]byte, error) {
-	return []byte{SYNTAX_NOSUCHINSTANCE, 0}, nil
+	return []byte{asn1.TagNoSuchInstance, 0}, nil
 }
 
 func (v *NoSucheInstance) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalEmpty(b, SYNTAX_NOSUCHINSTANCE)
+	return unmarshalEmpty(b, asn1.TagNoSuchInstance)
 }
 
 var NOSUCHEINSTANCE = &NoSucheInstance{Null{}}
@@ -979,15 +979,15 @@ func (v *EndOfMibView) MarshalJSON() ([]byte, error) {
 }
 
 func (v *EndOfMibView) Syntex() int {
-	return SYNTAX_ENDOFMIBVIEW
+	return asn1.TagEndOfMibView
 }
 
 func (v *EndOfMibView) Marshal() ([]byte, error) {
-	return []byte{SYNTAX_ENDOFMIBVIEW, 0}, nil
+	return []byte{asn1.TagEndOfMibView, 0}, nil
 }
 
 func (v *EndOfMibView) Unmarshal(b []byte) (rest []byte, err error) {
-	return unmarshalEmpty(b, SYNTAX_ENDOFMIBVIEW)
+	return unmarshalEmpty(b, asn1.TagEndOfMibView)
 }
 
 var ENDOFMIBVIEW = &EndOfMibView{Null{}}
@@ -1004,51 +1004,51 @@ func unmarshalVariable(b []byte) (v Variable, rest []byte, err error) {
 	}
 
 	switch raw.Class {
-	case ClassUniversal:
+	case asn1.ClassUniversal:
 		switch raw.Tag {
-		case SYNTAX_INTEGER:
+		case asn1.TagInteger:
 			var u Integer
 			v = &u
-		case SYNTAX_OCTETSTRING:
+		case asn1.TagOctetString:
 			var u OctetString
 			v = &u
-		case SYNTAX_NULL:
+		case asn1.TagNull:
 			var u Null
 			v = &u
-		case SYNTAX_OID:
+		case asn1.TagOID:
 			var u Oid
 			v = &u
 		}
-	case ClassApplication:
+	case asn1.ClassApplication:
 		switch raw.Tag {
-		case SYNTAX_IPADDRESS & tagMask:
+		case asn1.TagIPAddress & tagMask:
 			var u Ipaddress
 			v = &u
-		case SYNTAX_COUNTER32 & tagMask:
+		case asn1.TagCounter32 & tagMask:
 			var u Counter32
 			v = &u
-		case SYNTAX_GAUGE32 & tagMask:
+		case asn1.TagGauge32 & tagMask:
 			var u Gauge32
 			v = &u
-		case SYNTAX_TIMETICKS & tagMask:
+		case asn1.TagTimeticks & tagMask:
 			var u TimeTicks
 			v = &u
-		case SYNTAX_OPAQUE & tagMask:
+		case asn1.TagOpaque & tagMask:
 			var u Opaque
 			v = &u
-		case SYNTAX_COUNTER64 & tagMask:
+		case asn1.TagCounter64 & tagMask:
 			var u Counter64
 			v = &u
 		}
-	case ClassContextSpecific:
+	case asn1.ClassContextSpecific:
 		switch raw.Tag {
-		case SYNTAX_NOSUCHOBJECT & tagMask:
+		case asn1.TagNoSuchObject & tagMask:
 			var u NoSucheObject
 			v = &u
-		case SYNTAX_NOSUCHINSTANCE & tagMask:
+		case asn1.TagNoSuchInstance & tagMask:
 			var u NoSucheInstance
 			v = &u
-		case SYNTAX_ENDOFMIBVIEW & tagMask:
+		case asn1.TagEndOfMibView & tagMask:
 			var u EndOfMibView
 			v = &u
 		}
@@ -1096,7 +1096,7 @@ func unmarshalInt(b []byte, tag byte, setter func(*big.Int)) (rest []byte, err e
 	}
 
 	temp := b[0]
-	b[0] = SYNTAX_INTEGER
+	b[0] = asn1.TagInteger
 	var i *big.Int
 	rest, err = asn1.Unmarshal(b, &i)
 	if err == nil {
@@ -1113,7 +1113,7 @@ func unmarshalString(b []byte, tag byte, setter func([]byte)) (rest []byte, err 
 	}
 
 	temp := b[0]
-	b[0] = SYNTAX_OCTETSTRING
+	b[0] = asn1.TagOctetString
 	var s []byte
 	rest, err = asn1.Unmarshal(b, &s)
 	if err == nil {
