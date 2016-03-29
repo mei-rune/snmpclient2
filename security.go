@@ -21,7 +21,7 @@ import (
 type Security interface {
 	GenerateRequestMessage(*Arguments, Message) error
 	ProcessIncomingMessage(*Arguments, Message) error
-	Discover(*Arguments) error
+	//Discover(*Arguments) error
 	String() string
 }
 
@@ -62,61 +62,85 @@ func (c *community) ProcessIncomingMessage(args *Arguments, recvMsg Message) (er
 	return
 }
 
-func (c *community) Discover(args *Arguments) error {
-	return nil
-}
+// func (c *community) Discover(args *Arguments) error {
+// 	return nil
+// }
 
 func (c *community) String() string {
 	return "{}"
 }
 
-type discoveryStatus int
+//type DiscoveryStatus int
 
-const (
-	noDiscovered discoveryStatus = iota
-	noSynchronized
-	discovered
-)
+// const (
+// 	NoDiscovered DiscoveryStatus = iota
+// 	NoSynchronized
+// 	Discovered
+// )
 
-func (d discoveryStatus) String() string {
-	switch d {
-	case noDiscovered:
-		return "noDiscovered"
-	case noSynchronized:
-		return "noSynchronized"
-	case discovered:
-		return "discovered"
-	default:
-		return "Unknown"
-	}
-}
+// func (d DiscoveryStatus) String() string {
+// 	switch d {
+// 	case noDiscovered:
+// 		return "noDiscovered"
+// 	case noSynchronized:
+// 		return "noSynchronized"
+// 	case discovered:
+// 		return "discovered"
+// 	default:
+// 		return "Unknown"
+// 	}
+// }
 
 type USM struct {
-	DiscoveryStatus discoveryStatus
+	//DiscoveryStatus DiscoveryStatus
 	AuthEngineId    []byte
 	AuthEngineBoots int64
 	AuthEngineTime  int64
-	AuthKey         []byte
-	PrivKey         []byte
-	UpdatedTime     time.Time
+	// AuthKey         []byte
+	// PrivKey         []byte
+	UpdatedTime time.Time
+}
+
+func (u *USM) IsDiscover() bool {
+	return len(u.AuthEngineId) > 0 && u.AuthEngineTime > 0
 }
 
 func (u *USM) GenerateRequestMessage(args *Arguments, sendMsg Message) (err error) {
 	// setup message
 	m := sendMsg.(*MessageV3)
 
-	if u.DiscoveryStatus > noDiscovered {
-		m.UserName = []byte(args.UserName)
-		m.AuthEngineId = u.AuthEngineId
+	// // DEBUG BEGIN
+	// if 14348 != m.MessageId {
+	m.MessageId = m.pdu.RequestId()
+	// }
+	// // DEBUG END
+	if args.MessageMaxSize > 256 {
+		m.MessageMaxSize = args.MessageMaxSize
+	} else {
+		m.MessageMaxSize = 65507
 	}
-	if u.DiscoveryStatus > noSynchronized {
-		err = u.UpdateEngineBootsTime()
-		if err != nil {
-			return
+	m.SecurityModel = securityUsm
+
+	m.SetReportable(confirmedType(m.pdu.PduType()))
+	if args.SecurityLevel >= AuthNoPriv {
+		m.SetAuthentication(true)
+		if args.SecurityLevel >= AuthPriv {
+			m.SetPrivacy(true)
 		}
-		m.AuthEngineBoots = u.AuthEngineBoots
-		m.AuthEngineTime = u.AuthEngineTime
 	}
+
+	//if u.DiscoveryStatus > NoDiscovered {
+	m.UserName = []byte(args.UserName)
+	m.AuthEngineId = u.AuthEngineId
+	//}
+	// if u.DiscoveryStatus > NoSynchronized {
+	err = u.UpdateEngineBootsTime()
+	if err != nil {
+		return err
+	}
+	m.AuthEngineBoots = u.AuthEngineBoots
+	m.AuthEngineTime = u.AuthEngineTime
+	//}
 
 	// setup PDU
 	p := sendMsg.PDU().(*ScopedPdu)
@@ -139,21 +163,30 @@ func (u *USM) GenerateRequestMessage(args *Arguments, sendMsg Message) (err erro
 	if m.Authentication() {
 		// encrypt PDU
 		if m.Privacy() {
-			err = encrypt(m, args.PrivProtocol, u.PrivKey)
+
+			// 		u.AuthKey = PasswordToKey(args.AuthProtocol, args.AuthPassword, authEngineId)
+			// 	}
+			// 	if len(args.PrivPassword) > 0 {
+			PrivKey := PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+			err = encrypt(m, args.PrivProtocol, PrivKey)
 			if err != nil {
-				return
+				return err
 			}
 		}
 
+		//fmt.Println(args.AuthProtocol, args.AuthPassword, ToHexStr(u.AuthEngineId, ""))
+		AuthKey := PasswordToKey(args.AuthProtocol, args.AuthPassword, u.AuthEngineId)
+		//fmt.Println(ToHexStr(AuthKey, ""))
+
 		// get digest of whole message
-		digest, e := mac(m, args.AuthProtocol, u.AuthKey)
-		if e != nil {
-			return e
+		digest, err := mac(m, args.AuthProtocol, AuthKey)
+		if err != nil {
+			return err
 		}
 		m.AuthParameter = digest
 	}
 
-	return
+	return nil
 }
 
 func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err error) {
@@ -216,7 +249,8 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 
 		// decrypt PDU
 		if rm.Privacy() {
-			e := decrypt(rm, args.PrivProtocol, u.PrivKey, rm.PrivParameter)
+			PrivKey := PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+			e := decrypt(rm, args.PrivProtocol, PrivKey, rm.PrivParameter)
 			if e != nil {
 				return ResponseError{
 					Cause:   e,
@@ -290,49 +324,15 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 	return
 }
 
-func (u *USM) Discover(args *Arguments) (err error) {
-	if args.SecurityEngineId != "" {
-		securityEngineId, _ := engineIdToBytes(args.SecurityEngineId)
-		u.SetAuthEngineId(args, securityEngineId)
-		u.DiscoveryStatus = noSynchronized
-		return
-	}
-
-	if u.DiscoveryStatus == noDiscovered {
-		// Send an empty PDU with the NoAuthNoPriv
-		orgSecLevel := args.SecurityLevel
-		args.SecurityLevel = NoAuthNoPriv
-
-		//pdu := NewPdu(args.Version, GetRequest)
-		//_, err = snmp.sendPdu(pdu)
-
-		args.SecurityLevel = orgSecLevel
-		if err != nil {
-			return
-		}
-	}
-
-	if u.DiscoveryStatus == noSynchronized && args.SecurityLevel > NoAuthNoPriv {
-		// Send an empty PDU
-		//pdu := NewPdu(args.Version, GetRequest)
-		//_, err = snmp.sendPdu(pdu)
-		if err != nil {
-			return
-		}
-	}
-
-	return
-}
-
-func (u *USM) SetAuthEngineId(args *Arguments, authEngineId []byte) {
-	u.AuthEngineId = authEngineId
-	if len(args.AuthPassword) > 0 {
-		u.AuthKey = PasswordToKey(args.AuthProtocol, args.AuthPassword, authEngineId)
-	}
-	if len(args.PrivPassword) > 0 {
-		u.PrivKey = PasswordToKey(args.AuthProtocol, args.PrivPassword, authEngineId)
-	}
-}
+// func (u *USM) SetAuthEngineId(args *Arguments, authEngineId []byte) {
+// 	u.AuthEngineId = authEngineId
+// 	if len(args.AuthPassword) > 0 {
+// 		u.AuthKey = PasswordToKey(args.AuthProtocol, args.AuthPassword, authEngineId)
+// 	}
+// 	if len(args.PrivPassword) > 0 {
+// 		u.PrivKey = PasswordToKey(args.AuthProtocol, args.PrivPassword, authEngineId)
+// 	}
+// }
 
 func (u *USM) UpdateEngineBootsTime() error {
 	now := time.Now()
@@ -371,10 +371,10 @@ func (u *USM) CheckTimeliness(engineBoots, engineTime int64) error {
 
 func (u *USM) String() string {
 	return fmt.Sprintf(
-		`{"DiscoveryStatus": "%s", "AuthEngineId": "%s", "AuthEngineBoots": "%d", `+
-			`"AuthEngineTime": "%d", "AuthKey": "%s", "PrivKey": "%s", "UpdatedTime": "%s"}`,
-		u.DiscoveryStatus, ToHexStr(u.AuthEngineId, ""), u.AuthEngineBoots, u.AuthEngineTime,
-		ToHexStr(u.AuthKey, ""), ToHexStr(u.PrivKey, ""), u.UpdatedTime)
+		`{"AuthEngineId": "%s", "AuthEngineBoots": "%d", `+
+			`"AuthEngineTime": "%d", "UpdatedTime": "%s"}`,
+		ToHexStr(u.AuthEngineId, ""), u.AuthEngineBoots, u.AuthEngineTime,
+		u.UpdatedTime)
 }
 
 func mac(msg *MessageV3, proto AuthProtocol, key []byte) ([]byte, error) {
@@ -385,6 +385,9 @@ func mac(msg *MessageV3, proto AuthProtocol, key []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// fmt.Println("=========")
+	// fmt.Println(ToHexStr(msgBytes, ""))
 
 	var h hash.Hash
 	switch proto {
@@ -563,6 +566,8 @@ func PasswordToKey(proto AuthProtocol, password string, engineId []byte) []byte 
 		h = md5.New()
 	case Sha:
 		h = sha1.New()
+	default:
+		panic("unknow auth protocol")
 	}
 
 	pass := []byte(password)
@@ -576,9 +581,65 @@ func PasswordToKey(proto AuthProtocol, password string, engineId []byte) []byte 
 	}
 	ku := h.Sum(nil)
 
+	// fmt.Println(ToHexStr(ku, ""))
+	// bs, e := generate_keys(crypto.MD5, password)
+	// fmt.Println(ToHexStr(bs, ""), e)
+
 	h.Reset()
 	h.Write(ku)
 	h.Write(engineId)
 	h.Write(ku)
 	return h.Sum(nil)
+
+	//return generate_localization_keys(crypto.MD5, ku, engineId)
+
+	// fmt.Println("lock", ToHexStr(bs, ""), e)
+	// fmt.Println(ToHexStr(a, ""), e)
+	//return bs
 }
+
+// const (
+// 	SNMP_AUTH_KEY_LOOPCNT     = 1048576
+// 	SNMP_EXTENDED_KEY_SIZ int = 64
+// )
+
+// func generate_keys(hash crypto.Hash, passphrase string) ([]byte, error) {
+// 	bytes := []byte(passphrase)
+// 	passphrase_len := len(bytes)
+// 	if 0 == passphrase_len {
+// 		return nil, errors.New("passphrase is empty.")
+// 	}
+
+// 	var buf [SNMP_EXTENDED_KEY_SIZ]byte
+
+// 	calc := hash.New()
+
+// 	for loop := 0; loop < SNMP_AUTH_KEY_LOOPCNT; loop += SNMP_EXTENDED_KEY_SIZ {
+// 		for i := 0; i < SNMP_EXTENDED_KEY_SIZ; i++ {
+// 			buf[i] = bytes[(loop+i)%passphrase_len]
+// 		}
+// 		_, err := calc.Write(buf[:])
+// 		if nil != err {
+// 			return nil, err
+// 		}
+// 	}
+
+// 	return calc.Sum(nil), nil
+// }
+
+// func generate_localization_keys(hash crypto.Hash, b1, b2 []byte) ([]byte, error) {
+// 	calc := hash.New()
+// 	_, err := calc.Write(b1)
+// 	if nil != err {
+// 		return nil, err
+// 	}
+// 	_, err = calc.Write(b2)
+// 	if nil != err {
+// 		return nil, err
+// 	}
+// 	_, err = calc.Write(b1)
+// 	if nil != err {
+// 		return nil, err
+// 	}
+// 	return calc.Sum(nil), nil
+// }

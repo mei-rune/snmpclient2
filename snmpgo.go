@@ -1,6 +1,7 @@
 package snmpclient2
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"net"
@@ -143,7 +144,7 @@ func (s *SNMP) Open() (err error) {
 	}
 
 	err = retry(int(s.args.Retries), func() error {
-		return s.mp.Security().Discover(&s.args)
+		return errors.New("discover is not implemented.") // s.mp.Security().Discover(&s.args)
 	})
 	if err != nil {
 		s.Close()
