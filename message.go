@@ -343,9 +343,9 @@ func (msg *MessageV3) Marshal() (b []byte, err error) {
 	}
 	raw.Bytes = append(raw.Bytes, buf...)
 
-	if 0 == len(msg.pduBytes) {
-		panic("pdu bytes is empty.")
-	}
+	// if 0 == len(msg.pduBytes) {
+	// 	panic("pdu bytes is empty.")
+	// }
 	raw.Bytes = append(raw.Bytes, msg.pduBytes...)
 	return asn1.Marshal(raw)
 }
