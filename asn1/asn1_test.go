@@ -57,8 +57,8 @@ var int64TestData = []int64Test{
 	{[]byte{0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, true, -9223372036854775808},
 	{[]byte{0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, false, 0},
 	{[]byte{}, false, 0},
-	{[]byte{0x00, 0x7f}, false, 0},
-	{[]byte{0xff, 0xf0}, false, 0},
+	{[]byte{0x00, 0x7f}, true, 0x7f},
+	{[]byte{0xff, 0xf0}, true, -16},
 }
 
 func TestParseInt64(t *testing.T) {
@@ -90,8 +90,8 @@ var int32TestData = []int32Test{
 	{[]byte{0x80, 0x00, 0x00, 0x00}, true, -2147483648},
 	{[]byte{0x80, 0x00, 0x00, 0x00, 0x00}, false, 0},
 	{[]byte{}, false, 0},
-	{[]byte{0x00, 0x7f}, false, 0},
-	{[]byte{0xff, 0xf0}, false, 0},
+	{[]byte{0x00, 0x7f}, true, 0x7f},
+	{[]byte{0xff, 0xf0}, true, -16},
 }
 
 func TestParseInt32(t *testing.T) {
@@ -118,8 +118,8 @@ var bigIntTests = []struct {
 	{[]byte{0xff, 0x00}, true, "-256"},
 	{[]byte{0x01, 0x00}, true, "256"},
 	{[]byte{}, false, ""},
-	{[]byte{0x00, 0x7f}, false, ""},
-	{[]byte{0xff, 0xf0}, false, ""},
+	//{[]byte{0x00, 0x7f}, false, ""},
+	//{[]byte{0xff, 0xf0}, false, ""},
 }
 
 func TestParseBigInt(t *testing.T) {
@@ -226,7 +226,7 @@ type objectIdentifierTest struct {
 }
 
 var objectIdentifierTestData = []objectIdentifierTest{
-	{[]byte{}, false, []int{}},
+	{[]byte{}, true, []int{}},
 	{[]byte{85}, true, []int{2, 5}},
 	{[]byte{85, 0x02}, true, []int{2, 5, 2}},
 	{[]byte{85, 0x02, 0xc0, 0x00}, true, []int{2, 5, 2, 0x2000}},
