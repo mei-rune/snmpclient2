@@ -144,7 +144,10 @@ func (s *SNMP) Open() (err error) {
 	}
 
 	err = retry(int(s.args.Retries), func() error {
-		return errors.New("discover is not implemented.") // s.mp.Security().Discover(&s.args)
+		if s.args.Version == V3 {
+			return errors.New("discover is not implemented.") // s.mp.Security().Discover(&s.args)
+		}
+		return nil
 	})
 	if err != nil {
 		s.Close()
