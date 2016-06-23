@@ -24,7 +24,20 @@ func (s SnmpVersion) String() string {
 	case V3:
 		return "3"
 	default:
-		return "Unknown"
+		return "unknown_version"
+	}
+}
+
+func (s SnmpVersion) ToString() string {
+	switch s {
+	case V1:
+		return "v1"
+	case V2c:
+		return "v2c"
+	case V3:
+		return "v3"
+	default:
+		return "unknown_version"
 	}
 }
 
