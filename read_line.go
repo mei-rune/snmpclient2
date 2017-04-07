@@ -34,8 +34,9 @@ func ParseString(ss []string, is_end bool, vs string) (Variable, []string, error
 			break
 		} else if strings.Contains(sss, "MIB search path") ||
 			//strings.HasPrefix(sss, "#") ||
-			strings.Contains(sss, "Cannot find module") ||
-			strings.Contains(sss, "#tools\\snmpwalk.exe") {
+			strings.HasPrefix(sss, "Cannot find module") ||
+			strings.HasPrefix(sss, "#tools\\snmpwalk.exe") ||
+			strings.HasPrefix(sss, "Timeout: No Response from") {
 			p = idx
 			break
 		}
@@ -99,7 +100,8 @@ func ParseHexString(ss []string, is_end bool, vs string) (Variable, []string, er
 		} else if strings.HasPrefix(sss, "#") ||
 			strings.Contains(sss, "MIB search path") ||
 			strings.Contains(sss, "Cannot find module") ||
-			strings.Contains(sss, "#tools\\snmpwalk.exe") {
+			strings.Contains(sss, "#tools\\snmpwalk.exe") ||
+			strings.HasPrefix(sss, "Timeout: No Response from") {
 			p = idx
 			break
 		}
@@ -161,7 +163,8 @@ func ParseLine(ss []string, is_end bool) (*Oid, Variable, []string, error) {
 	sa := strings.SplitN(ss[0], "=", 2)
 	if 2 != len(sa) {
 		if strings.Contains(ss[0], "MIB search path") ||
-			strings.Contains(ss[0], "Cannot find module") {
+			strings.Contains(ss[0], "Cannot find module") ||
+			strings.HasPrefix(ss[0], "Timeout: No Response from") {
 			return nil, nil, nil, empty_line
 		}
 		//MIB search path: c:/usr/share/snmp/mibs
