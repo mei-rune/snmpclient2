@@ -135,6 +135,41 @@ func ParseVersion(v string) (SnmpVersion, error) {
 	return 0, errors.New("Unsupported version - " + v)
 }
 
+func ParseSecurityLevel(s string) (SecurityLevel, error) {
+	switch s {
+	case "noAuthNoPriv", "":
+		return NoAuthNoPriv, nil
+	case "authNoPriv":
+		return AuthNoPriv, nil
+	case "authPriv":
+		return AuthPriv, nil
+	default:
+		return 0, errors.New("SecurityLevel '" + s + "' is unsupported.")
+	}
+}
+
+func ParseAuthProtocol(s string) (AuthProtocol, error) {
+	switch s {
+	case "md5":
+		return Md5, nil
+	case "sha":
+		return Sha, nil
+	default:
+		return "", errors.New("AuthProtocol '" + s + "' is unsupported.")
+	}
+}
+
+func ParsePrivProtocol(s string) (PrivProtocol, error) {
+	switch s {
+	case "des":
+		return Des, nil
+	case "aes":
+		return Aes, nil
+	default:
+		return "", errors.New("PrivProtocol '" + s + "' is unsupported.")
+	}
+}
+
 // For snmpgo testing
 func ArgsValidate(args *Arguments) error     { return args.validate() }
 func SnmpCheckPdu(snmp *SNMP, pdu PDU) error { return snmp.checkPdu(pdu) }
