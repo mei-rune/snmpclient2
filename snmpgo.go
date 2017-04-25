@@ -165,6 +165,16 @@ func (s *SNMP) Close() {
 	}
 }
 
+func (s *SNMP) SetRequest(variableBindings VariableBindings) (result PDU, err error) {
+	pdu := NewPduWithVarBinds(s.args.Version, SetRequest, variableBindings)
+
+	retry(int(s.args.Retries), func() error {
+		result, err = s.sendPdu(pdu)
+		return err
+	})
+	return
+}
+
 func (s *SNMP) GetRequest(oids Oids) (result PDU, err error) {
 	pdu := NewPduWithOids(s.args.Version, GetRequest, oids)
 

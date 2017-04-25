@@ -77,3 +77,14 @@ func AsUint32(value Variable) (uint32, error) {
 	}
 	return 0, errors.New("type Assertion to uint32 failed")
 }
+
+func AsString(value Variable) (string, error) {
+	if value.Syntex() == asn1.TagOctetString ||
+		value.Syntex() == asn1.TagUTF8String ||
+		value.Syntex() == asn1.TagPrintableString ||
+		value.Syntex() == asn1.TagGeneralString ||
+		value.Syntex() == asn1.TagOpaque {
+		return string(value.Bytes()), nil
+	}
+	return "", errors.New("type Assertion to string failed")
+}
