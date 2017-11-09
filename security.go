@@ -31,6 +31,9 @@ func (c *community) GenerateRequestMessage(args *Arguments, sendMsg Message) err
 	m := sendMsg.(*MessageV1)
 	m.Community = []byte(args.Community)
 
+	if len(m.pduBytes) != 0 && m.PDU() == nil {
+		return nil
+	}
 	b, err := m.PDU().Marshal()
 	if err != nil {
 		return err

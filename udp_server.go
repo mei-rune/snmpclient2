@@ -316,26 +316,26 @@ func (self *UdpServer) serve() {
 				log.Printf("["+self.name+"]Failed to process incoming message - v3 message is unsupported : [%s]",
 					ToHexStr(recv_bytes, " "))
 				return
-			} else {
-				recvMsg := &MessageV1{
-					version: SnmpVersion(version),
-					pdu:     &PduV1{},
-				}
-				_, err = recvMsg.Unmarshal(recv_bytes)
-				if err != nil {
-					log.Printf("["+self.name+"]Failed to Unmarshal message - %s : [%s]",
-						err.Error(), ToHexStr(recv_bytes, " "))
-					return
-				}
-
-				err = self.mpv1.ProcessIncomingMessage(nil, recvMsg)
-				if err != nil {
-					log.Printf("["+self.name+"]Failed to process incoming message - %s : [%s]",
-						err.Error(), ToHexStr(recv_bytes, " "))
-					return
-				}
-				self.on_v2(addr, recvMsg, recv_bytes)
 			}
+			recvMsg := &MessageV1{
+				version: SnmpVersion(version),
+				pdu:     &PduV1{},
+			}
+			_, err = recvMsg.Unmarshal(recv_bytes)
+			if err != nil {
+				log.Printf("["+self.name+"]Failed to Unmarshal message - %s : [%s]",
+					err.Error(), ToHexStr(recv_bytes, " "))
+				return
+			}
+
+			err = self.mpv1.ProcessIncomingMessage(nil, recvMsg)
+			if err != nil {
+				log.Printf("["+self.name+"]Failed to process incoming message - %s : [%s]",
+					err.Error(), ToHexStr(recv_bytes, " "))
+				return
+			}
+			self.on_v2(addr, recvMsg, recv_bytes)
+
 		}(cached_bytes[:n])
 	}
 }

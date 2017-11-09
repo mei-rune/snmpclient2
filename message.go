@@ -48,6 +48,10 @@ func (msg *MessageV1) PDU() PDU {
 	return msg.pdu
 }
 
+func (msg *MessageV1) SetPDU(pdu PDU) {
+	msg.pdu = pdu
+}
+
 func (msg *MessageV1) PduBytes() []byte {
 	return msg.pduBytes
 }
