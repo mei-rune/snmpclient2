@@ -78,7 +78,6 @@ func ParseString(ss []string, is_end bool, vs string) (Variable, []string, error
 func ReadHex(buf *bytes.Buffer, s string) error {
 	for _, h := range strings.Fields(strings.TrimSpace(s)) {
 		if 2 != len(h) {
-			panic("")
 			return errors.New("decode \"" + s + "\" failed, 'len of " + h + "' is not equals 2.")
 		}
 
