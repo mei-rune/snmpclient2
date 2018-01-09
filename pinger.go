@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -11,6 +12,17 @@ import (
 
 	"github.com/runner-mei/snmpclient2/asn1"
 )
+
+var testOid = []int{1, 3, 6, 1, 2, 1, 1, 2, 0}
+
+func init() {
+	s := os.Getenv("snmp_client.test_oid")
+	if s != "" {
+		if ints, err := ParseIntsFromString(s); err == nil {
+			testOid = ints
+		}
+	}
+}
 
 type PingResult struct {
 	Id             int
@@ -112,7 +124,7 @@ func (self *internal_pinger) SendPdu(id int, ra *net.UDPAddr, version SnmpVersio
 	switch version {
 	case V1, V2c:
 		//requestId: id, community: community
-		pdu := NewPduWithOids(version, GetRequest, []Oid{Oid{Value: []int{1, 3, 6, 1, 2, 1, 1, 2, 0}}})
+		pdu := NewPduWithOids(version, GetRequest, []Oid{Oid{Value: testOid}})
 		pdu.SetRequestId(id)
 		m := &MessageV1{
 			version: version,
