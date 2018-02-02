@@ -22,7 +22,7 @@ func ParseString(ss []string, is_end bool, vs string) (Variable, []string, error
 		return nil, nil, errors.New("parse `" + strings.Join(ss, "\r\n") + "` failed, \"" + simple_line + "\" is not start with \".")
 	}
 	if 1 < len(simple_line) {
-		if strings.HasSuffix(simple_line, "\"") {
+		if strings.HasSuffix(simple_line, "\"") && !strings.HasSuffix(simple_line, "\\\"") {
 			return NewOctetString([]byte(simple_line[1 : len(simple_line)-1])), ss[1:], nil
 		}
 	}
@@ -48,7 +48,7 @@ func ParseString(ss []string, is_end bool, vs string) (Variable, []string, error
 			if 1 != len(ss) {
 				simple_line = simple_line[1:] + "\r\n" + strings.Join(ss[1:], "\r\n")
 			}
-			if strings.HasSuffix(simple_line, "\"") {
+			if strings.HasSuffix(simple_line, "\"") && !strings.HasSuffix(simple_line, "\\\"") {
 				simple_line = simple_line[:len(simple_line)-1]
 			}
 			if strings.HasPrefix(simple_line, "\"") {
@@ -64,7 +64,7 @@ func ParseString(ss []string, is_end bool, vs string) (Variable, []string, error
 	if 1 != p {
 		simple_line = simple_line + "\r\n" + strings.Join(ss[1:p], "\r\n")
 	}
-	if strings.HasSuffix(simple_line, "\"") {
+	if strings.HasSuffix(simple_line, "\"") && !strings.HasSuffix(simple_line, "\\\"") {
 		simple_line = simple_line[:len(simple_line)-1]
 	}
 
