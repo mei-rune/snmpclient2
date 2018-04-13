@@ -428,7 +428,7 @@ func ParseIntsFromString(s string) ([]int, error) {
 			result = append(result, 0)
 		case "iso":
 			result = append(result, 1)
-		case "joint_ccitt_iso":
+		case "joint-iso-ccitt", "joint-1-ccitt", "joint_ccitt_iso", "joint_iso_ccitt", "joint_1_ccitt":
 			result = append(result, 2)
 		case "iso/ccitt":
 			result = append(result, 3)
