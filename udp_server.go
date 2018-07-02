@@ -171,6 +171,16 @@ func (self *UdpServer) ReturnErrorIfOidNotExists(status bool) *UdpServer {
 	return self
 }
 
+func (self *UdpServer) ReloadMibsFromFile(file string) error {
+	bs, e := ioutil.ReadFile(file)
+	if nil != e {
+		return e
+	}
+
+	self.mibs = NewMibTree()
+	return self.LoadMibsFromString(string(bs))
+}
+
 func (self *UdpServer) ReloadMibsFromString(mibs string) error {
 	self.mibs = NewMibTree()
 	return self.LoadMibsFromString(mibs)
