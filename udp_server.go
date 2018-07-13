@@ -228,6 +228,20 @@ func (self *UdpServer) GetPort() string {
 func (self *UdpServer) Close() {
 	self.conn.Close()
 	self.waitGroup.Wait()
+	self.conn = nil
+}
+
+func (self *UdpServer) Restart() error {
+	self.Close()
+
+	self.listenAddr = nil
+	log.Println("udp server is exited")
+	err := self.start()
+	if err == nil {
+
+		log.Println("udp server is restarted, listen at", self.listenAddr.String())
+	}
+	return err
 }
 
 func (self *UdpServer) start() error {
