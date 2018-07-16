@@ -143,7 +143,7 @@ func TestVarBinds(t *testing.T) {
 	}
 	for i, o := range expOids {
 		if !o.Equal(&w[i].Oid) {
-			t.Errorf("Sort() - expected [%s], actual [%s]", o, w[i].Oid)
+			t.Errorf("Sort() - expected [%v], actual [%v]", o, w[i].Oid)
 		}
 	}
 
@@ -160,7 +160,7 @@ func TestVarBinds(t *testing.T) {
 	}
 	for i, o := range expOids {
 		if !o.Equal(&w[i].Oid) {
-			t.Errorf("Uniq() - expected [%s], actual [%s]", o, w[i].Oid)
+			t.Errorf("Uniq() - expected [%v], actual [%v]", o, w[i].Oid)
 		}
 	}
 }
@@ -205,7 +205,7 @@ func TestPduV1(t *testing.T) {
 	}
 	buf, err := pdu.Marshal()
 	if err != nil {
-		t.Fatal("Marshal() : %v", err)
+		t.Fatal("Marshal() : ", err)
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
@@ -256,7 +256,7 @@ func TestScopedPdu(t *testing.T) {
 	}
 	buf, err := pdu.Marshal()
 	if err != nil {
-		t.Fatal("Marshal() : %v", err)
+		t.Fatal("Marshal() : ", err)
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",

@@ -66,7 +66,7 @@ func NewVariable(s string) (Variable, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported snmp type -", ss[0])
+	return nil, fmt.Errorf("unsupported snmp type - %s", ss[0])
 }
 
 type Variable interface {

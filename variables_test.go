@@ -25,7 +25,7 @@ func TestInteger(t *testing.T) {
 
 	buf, err := v.Marshal()
 	if err != nil {
-		t.Errorf("Marshal(): %v", err)
+		t.Error("Marshal(): ", err)
 	}
 	if !bytes.Equal(expBuf, buf) {
 		t.Errorf("Marshal() - expected [%s], actual [%s]",
@@ -324,7 +324,7 @@ func TestOids(t *testing.T) {
 	}
 	for i, o := range expOids {
 		if !o.Equal(&oids[i]) {
-			t.Errorf("Sort() - expected [%s], actual [%s]", o, oids[i])
+			t.Errorf("Sort() - expected [%v], actual [%v]", o, oids[i])
 		}
 	}
 
@@ -340,7 +340,7 @@ func TestOids(t *testing.T) {
 	}
 	for i, o := range expOids {
 		if !o.Equal(&oids[i]) {
-			t.Errorf("Uniq() - expected [%s], actual [%s]", o, oids[i])
+			t.Errorf("Uniq() - expected [%v], actual [%v]", o, oids[i])
 		}
 	}
 
@@ -353,7 +353,7 @@ func TestOids(t *testing.T) {
 	}
 	for i, o := range expOids {
 		if !o.Equal(&oids[i]) {
-			t.Errorf("Uniq() - expected [%s], actual [%s]", o, oids[i])
+			t.Errorf("Uniq() - expected [%v], actual [%v]", o, oids[i])
 		}
 	}
 }

@@ -242,7 +242,7 @@ func (self *UdpServer) Pause() error {
 func (self *UdpServer) Resume() error {
 	err := self.start()
 	if err == nil {
-		log.Println("udp server is restarted, listen at", self.listenAddr.String())
+		log.Println("udp server is resumed, listen at", self.listenAddr)
 	}
 	return err
 }
