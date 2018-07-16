@@ -226,9 +226,25 @@ func (self *UdpServer) GetPort() string {
 }
 
 func (self *UdpServer) Close() {
-	self.conn.Close()
-	self.waitGroup.Wait()
-	self.conn = nil
+	if self.conn != nil {
+		self.conn.Close()
+		self.waitGroup.Wait()
+		self.conn = nil
+	}
+}
+
+func (self *UdpServer) Pause() error {
+	self.Close()
+	log.Println("udp server is exited - ", self.listenAddr)
+	return nil
+}
+
+func (self *UdpServer) Resume() error {
+	err := self.start()
+	if err == nil {
+		log.Println("udp server is restarted, listen at", self.listenAddr.String())
+	}
+	return err
 }
 
 func (self *UdpServer) Restart() error {
@@ -238,7 +254,6 @@ func (self *UdpServer) Restart() error {
 	log.Println("udp server is exited")
 	err := self.start()
 	if err == nil {
-
 		log.Println("udp server is restarted, listen at", self.listenAddr.String())
 	}
 	return err
