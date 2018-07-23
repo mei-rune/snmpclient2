@@ -137,11 +137,11 @@ func ParseVersion(v string) (SnmpVersion, error) {
 
 func ParseSecurityLevel(s string) (SecurityLevel, error) {
 	switch s {
-	case "noAuthNoPriv", "":
+	case "noAuthNoPriv", "NoAuthNoPriv", "noauthnopriv", "":
 		return NoAuthNoPriv, nil
-	case "authNoPriv":
+	case "authNoPriv", "AuthNoPriv", "authnopriv":
 		return AuthNoPriv, nil
-	case "authPriv":
+	case "authPriv", "AuthPriv", "authpriv":
 		return AuthPriv, nil
 	default:
 		return 0, errors.New("SecurityLevel '" + s + "' is unsupported.")
@@ -150,9 +150,9 @@ func ParseSecurityLevel(s string) (SecurityLevel, error) {
 
 func ParseAuthProtocol(s string) (AuthProtocol, error) {
 	switch s {
-	case "md5":
+	case "md5", "MD5":
 		return Md5, nil
-	case "sha":
+	case "sha", "SHA":
 		return Sha, nil
 	default:
 		return "", errors.New("AuthProtocol '" + s + "' is unsupported.")
@@ -161,9 +161,9 @@ func ParseAuthProtocol(s string) (AuthProtocol, error) {
 
 func ParsePrivProtocol(s string) (PrivProtocol, error) {
 	switch s {
-	case "des":
+	case "des", "DES":
 		return Des, nil
-	case "aes":
+	case "aes", "AES":
 		return Aes, nil
 	default:
 		return "", errors.New("PrivProtocol '" + s + "' is unsupported.")
