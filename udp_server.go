@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -111,7 +113,25 @@ func NewUdpServerFromFile(nm, addr, file string, is_update_mibs bool) (*UdpServe
 		is_update_mibs: is_update_mibs,
 		mibs:           NewMibTree(),
 		mpv1:           NewCommunity()}
-	r, e := os.Open(file)
+
+	var r io.ReadCloser
+	var e error
+
+	if strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://") {
+		resp, err := http.Get(file)
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode != http.StatusOK {
+			if resp.Body != nil {
+				io.Copy(os.Stdout, resp.Body)
+			}
+			return nil, errors.New(resp.Status)
+		}
+		r = resp.Body
+	} else {
+		r, e = os.Open(file)
+	}
 	if nil != e {
 		return nil, e
 	}
@@ -134,6 +154,9 @@ func NewUdpServerFromFile(nm, addr, file string, is_update_mibs bool) (*UdpServe
 	}); nil != e {
 		return nil, e
 	}
+
+	r.Close()
+
 	return srv, srv.start()
 }
 
