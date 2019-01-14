@@ -87,7 +87,7 @@ type Variable interface {
 }
 
 type Integer struct {
-	Value int32
+	Value int
 }
 
 func (v *Integer) IsError() bool {
@@ -138,7 +138,7 @@ func (v *Integer) Unmarshal(b []byte) (rest []byte, err error) {
 }
 
 func NewInteger(i int32) *Integer {
-	return &Integer{i}
+	return &Integer{int(i)}
 }
 
 func NewIntegerFromString(s string) (Variable, error) {
@@ -147,7 +147,7 @@ func NewIntegerFromString(s string) (Variable, error) {
 		return nil, fmt.Errorf("int32 style error, value is %s, exception is %s", s, ok.Error())
 	}
 
-	return &Integer{int32(i)}, nil
+	return &Integer{int(i)}, nil
 }
 
 type OctetString struct {

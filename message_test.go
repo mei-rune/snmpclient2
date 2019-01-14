@@ -2,6 +2,7 @@ package snmpclient2_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"testing"
 
 	"github.com/runner-mei/snmpclient2"
@@ -315,4 +316,34 @@ func TestMessageV1Unmarshal2(t *testing.T) {
 	if expStr != m.String() {
 		t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, m.String())
 	}
+}
+
+func TestMessageV1Unmarshal3(t *testing.T) {
+	txt := "30819f020101040863735f64626f6e65a2818f020301298d0201000201003081813010060b2b060102011902030101220201223018060b2b0601020119020301022206092b06010201190201043014060b2b0601020119020301032204052f646174613011060b2b06010201190203010422020210003014060b2b06010201190203010522020500acce08003014060b2b06010201190203010622020500986aad9b"
+
+	buf, _ := hex.DecodeString(txt)
+	pdu := snmpclient2.NewPdu(snmpclient2.V2c, snmpclient2.GetResponse)
+	m := snmpclient2.NewMessage(snmpclient2.V2c, pdu)
+	rest, err := m.Unmarshal(buf)
+	if len(rest) != 0 || err != nil {
+		t.Errorf("Unmarshal() - len[%d] err[%v]", len(rest), err)
+	}
+
+	mp := snmpclient2.NewCommunity()
+
+	if err = mp.ProcessIncomingMessage(nil, m); nil != err {
+		t.Error(err)
+		return
+	}
+	// //pdu.Unmarshal()
+	// expStr := `{"Version": "2c", "Community": "dzgw@jxzzb", "PDU": {"Type": "GetResponse", "RequestId": "136350",` +
+	// 	` "ErrorStatus": "NoError", "ErrorIndex": "0", "VariableBindings": [{"Oid": "1.3.6.1.2.1.47.1.1.1.1.3.1",` +
+	// 	` "Variable": {"Type": "oid", "Value": "0.0"}}, {"Oid": "1.3.6.1.2.1.47.1.1.1.1.4.1", "Variable": {"Type": "int",` +
+	// 	` "Value": "0"}}, {"Oid": "1.3.6.1.2.1.47.1.1.1.1.6.1", "Variable": {"Type": "int", "Value": "-1"}}, {"Oid":` +
+	// 	` "1.3.6.1.2.1.47.1.1.1.1.8.1", "Variable": {"Type": "octets", "Value": ""}}, {"Oid": "1.3.6.1.2.1.47.1.1.1.1.14.1",` +
+	// 	` "Variable": {"Type": "octets", "Value": ""}}]}}`
+
+	// if expStr != m.String() {
+	// 	t.Errorf("Unmarshal() - expected [%s], actual [%s]", expStr, m.String())
+	// }
 }
