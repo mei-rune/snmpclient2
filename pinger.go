@@ -25,19 +25,20 @@ func init() {
 }
 
 type PingResult struct {
-	Id             int
-	Addr           net.Addr
-	Version        SnmpVersion
-	Community      string
-	SecurityParams map[string]string
-	Error          error
-	Timestamp      time.Time
+	Id        int
+	Addr      net.Addr
+	Version   SnmpVersion
+	Community string
+	Addition  map[string]interface{}
+	Error     error
+	Timestamp time.Time
 }
 
 type internal_pinger struct {
 	network      string
 	id           int
 	args         *Arguments
+	addition     map[string]interface{}
 	conn         net.PacketConn
 	wait         *sync.WaitGroup
 	ch           chan *PingResult
@@ -269,7 +270,11 @@ func (self *internal_pinger) serve() {
 				continue
 			}
 
-			self.ch <- &PingResult{Id: managedId, Addr: ra, Version: SnmpVersion(version), Timestamp: time.Now()}
+			self.ch <- &PingResult{Id: managedId,
+				Addr:      ra,
+				Version:   SnmpVersion(version),
+				Addition:  self.addition,
+				Timestamp: time.Now()}
 		} else {
 			pdu := &PduV1{}
 			recvMsg := &MessageV1{
@@ -293,6 +298,7 @@ func (self *internal_pinger) serve() {
 				Addr:      ra,
 				Version:   SnmpVersion(version),
 				Community: string(recvMsg.Community),
+				Addition:  self.addition,
 				Timestamp: time.Now()}
 		}
 
@@ -318,11 +324,12 @@ func (self *Pingers) Listen(network, laddr string, version SnmpVersion, communit
 	return nil
 }
 
-func (self *Pingers) ListenV3(network, laddr, userName string) error {
+func (self *Pingers) ListenV3(network, laddr, userName string, addition map[string]interface{}) error {
 	p, e := newPinger(network, laddr, &self.wait, self.ch, &Arguments{Version: V3, UserName: userName})
 	if nil != e {
 		return e
 	}
+	p.addition = addition
 	self.internals = append(self.internals, p)
 	return nil
 }
