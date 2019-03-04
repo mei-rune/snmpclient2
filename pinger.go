@@ -35,38 +35,33 @@ type PingResult struct {
 }
 
 type internal_pinger struct {
-	network        string
-	id             int
-	version        SnmpVersion
-	community      string
-	securityParams map[string]string
-	conn           net.PacketConn
-	wait           *sync.WaitGroup
-	ch             chan *PingResult
-	is_running     int32
-	cached_bytes   []byte
-	mpv1           Security
-	mpv3           Security
+	network      string
+	id           int
+	args         *Arguments
+	conn         net.PacketConn
+	wait         *sync.WaitGroup
+	ch           chan *PingResult
+	is_running   int32
+	cached_bytes []byte
+	mpv1         Security
+	mpv3         Security
 }
 
 // make(chan *PingResult, capacity)
-func newPinger(network, laddr string, wait *sync.WaitGroup, ch chan *PingResult, version SnmpVersion, community string,
-	securityParams map[string]string) (*internal_pinger, error) {
+func newPinger(network, laddr string, wait *sync.WaitGroup, ch chan *PingResult, args *Arguments) (*internal_pinger, error) {
 	c, err := net.ListenPacket(network, laddr)
 	if err != nil {
 		return nil, fmt.Errorf("ListenPacket(%q, %q) failed: %v", network, laddr, err)
 	}
 	internal_pinger := &internal_pinger{network: network,
-		id:             1,
-		wait:           wait,
-		conn:           c,
-		ch:             ch,
-		version:        version,
-		community:      community,
-		securityParams: securityParams,
-		is_running:     1,
-		mpv1:           NewCommunity(),
-		mpv3:           NewUsm()}
+		id:         1,
+		wait:       wait,
+		conn:       c,
+		ch:         ch,
+		args:       args,
+		is_running: 1,
+		mpv1:       NewCommunity(),
+		mpv3:       NewUsm()}
 
 	go internal_pinger.serve()
 	internal_pinger.wait.Add(1)
@@ -98,39 +93,34 @@ func (self *internal_pinger) GetChannel() <-chan *PingResult {
 
 var emptyParams = map[string]string{}
 
-func (self *internal_pinger) Send(raddr string) error {
+func (self *internal_pinger) SendWith(raddr string) error {
 	ra, err := net.ResolveUDPAddr(self.network, raddr)
 	if err != nil {
 		return fmt.Errorf("ResolveIPAddr(%q, %q) failed: %v", self.network, raddr, err)
 	}
-	return self.SendPdu(0, ra, self.version, self.community, self.securityParams)
+	return self.Send(0, ra, nil)
 }
 
-func (self *internal_pinger) SendPdu(id int, ra *net.UDPAddr, version SnmpVersion, community string, securityParams map[string]string) error {
-	// start_at := time.Now()
-	// var send_elapsed time.Duration = 0
-	// defer func() {
-	// 	interval := time.Now().Sub(start_at)
-	// 	if interval > 10*time.Millisecond {
-	// 		log.Println("[snmp-ping] send to", ra.String(), " elapsed ", interval, send_elapsed)
-	// 	}
-	// }()
+func (self *internal_pinger) Send(id int, ra *net.UDPAddr, args *Arguments) error {
 	if 0 == id {
 		self.id++
 		id = self.id
 	}
+	if args == nil {
+		args = self.args
+	}
 
-	var msg Message = nil
-	switch version {
+	var msg Message
+	switch args.Version {
 	case V1, V2c:
 		//requestId: id, community: community
-		pdu := NewPduWithOids(version, GetRequest, []Oid{Oid{Value: testOid}})
+		pdu := NewPduWithOids(args.Version, GetRequest, []Oid{Oid{Value: testOid}})
 		pdu.SetRequestId(id)
 		m := &MessageV1{
-			version: version,
+			version: args.Version,
 			pdu:     pdu,
 		}
-		m.Community = []byte(community)
+		m.Community = []byte(args.Community)
 
 		b, err := m.PDU().Marshal()
 		if err != nil {
@@ -139,22 +129,54 @@ func (self *internal_pinger) SendPdu(id int, ra *net.UDPAddr, version SnmpVersio
 		m.SetPduBytes(b)
 		msg = m
 	case V3:
+
+		// usm := client.mpv3.(*snmpclient2.USM)
+		// usm.AuthEngineId = nil
+		// usm.AuthEngineBoots = 0
+		// usm.AuthEngineTime = 0
+		// // usm.AuthKey = nil
+		// // usm.PrivKey = nil
+		// usm.UpdatedTime = time.Now()
+
+		// pdu := snmpclient2.NewPdu(snmpclient2.V3, snmpclient2.GetRequest)
+		// msg := snmpclient2.NewMessage(snmpclient2.V3, pdu)
+
+		// discoverRequest := newRequest()
+		// discoverRequest.request = msg
+		// discoverRequest.args = &snmpclient2.Arguments{Version: snmpclient2.V3,
+		// 	UserName:      username,
+		// 	SecurityLevel: snmpclient2.NoAuthNoPriv}
+		// discoverRequest.timeout = 10 * time.Second
+		// discoverRequest.cancel = 0
+
 		//pdu = &V3PDU{op: GetRequest, requestId: id, identifier: id,
 		//	securityModel: &USM{auth_proto: SNMP_AUTH_NOAUTH, priv_proto: SNMP_PRIV_NOPRIV}}
-		pdu := NewPdu(version, GetRequest)
+		pdu := NewPdu(args.Version, GetRequest).(*ScopedPdu)
 		pdu.SetRequestId(id)
-		msg = NewMessage(version, pdu)
+		msg = NewMessage(args.Version, pdu)
 		m := msg.(*MessageV3)
 		m.globalDataV3.initFlags()
 		m.globalDataV3.MessageId = id
+		m.MessageMaxSize = 65507
 		m.globalDataV3.SecurityModel = securityUsm
+		m.SetReportable(confirmedType(pdu.PduType()))
+		m.SetAuthentication(false)
+		m.SetPrivacy(false)
+
+		// p.ContextName = []byte(args.ContextName)
+
+		m.UserName = []byte(args.UserName)
+		m.AuthEngineId = []byte{0, 0, 0, 0, 0}
+		pdu.ContextEngineId = m.AuthEngineId
+
 		b, err := m.PDU().Marshal()
 		if err != nil {
 			return err
 		}
 		m.SetPduBytes(b)
+
 	default:
-		return fmt.Errorf("Unsupported version - %v", version)
+		return fmt.Errorf("Unsupported version - %v", args.Version)
 	}
 
 	// if nil == self.cached_bytes {
@@ -230,10 +252,19 @@ func (self *internal_pinger) serve() {
 		}
 
 		if SnmpVersion(version) == V3 {
-			var managedId int
-			next, err = asn1.Unmarshal(next, &managedId)
+
+			var raw asn1.RawValue
+			_, err := asn1.Unmarshal(next, &raw)
 			if err != nil {
-				log.Printf("[snmp-pinger] Failed to Unmarshal message - %s : [%s]",
+				log.Printf("[snmp-pinger/globalDataV3] Failed to Unmarshal message - %s : [%s]",
+					err.Error(), ToHexStr(recv_bytes, " "))
+				return
+			}
+
+			var managedId int
+			next, err = asn1.Unmarshal(raw.Bytes, &managedId)
+			if err != nil {
+				log.Printf("[snmp-pinger/managedId] Failed to Unmarshal message - %s : [%s]",
 					err.Error(), ToHexStr(recv_bytes, " "))
 				continue
 			}
@@ -279,7 +310,7 @@ func NewPingers(capacity int) *Pingers {
 }
 
 func (self *Pingers) Listen(network, laddr string, version SnmpVersion, community string) error {
-	p, e := newPinger(network, laddr, &self.wait, self.ch, version, community, nil)
+	p, e := newPinger(network, laddr, &self.wait, self.ch, &Arguments{Version: version, Community: community})
 	if nil != e {
 		return e
 	}
@@ -287,8 +318,8 @@ func (self *Pingers) Listen(network, laddr string, version SnmpVersion, communit
 	return nil
 }
 
-func (self *Pingers) ListenV3(network, laddr string, securityParams map[string]string) error {
-	p, e := newPinger(network, laddr, &self.wait, self.ch, V3, "", securityParams)
+func (self *Pingers) ListenV3(network, laddr, userName string) error {
+	p, e := newPinger(network, laddr, &self.wait, self.ch, &Arguments{Version: V3, UserName: userName})
 	if nil != e {
 		return e
 	}
@@ -313,7 +344,7 @@ func (self *Pingers) Length() int {
 }
 
 func (self *Pingers) Send(idx int, raddr string) error {
-	return self.internals[idx].Send(raddr)
+	return self.internals[idx].SendWith(raddr)
 }
 
 func (self *Pingers) Recv(timeout time.Duration) (net.Addr, SnmpVersion, error) {
@@ -337,7 +368,7 @@ type Pinger struct {
 func NewPinger(network, laddr string, capacity int) (*Pinger, error) {
 	self := &Pinger{}
 	self.ch = make(chan *PingResult, capacity)
-	p, e := newPinger(network, laddr, &self.wait, self.ch, V2c, "public", emptyParams)
+	p, e := newPinger(network, laddr, &self.wait, self.ch, &Arguments{Version: V2c, Community: "public"})
 	if nil != e {
 		return nil, e
 	}
@@ -360,26 +391,30 @@ func (self *Pinger) GetChannel() <-chan *PingResult {
 	return self.ch
 }
 
-func (self *Pinger) SendPdu(id int, ra *net.UDPAddr, version SnmpVersion, community string) error {
-	return self.internal.SendPdu(id, ra, version, community, nil)
+func (self *Pinger) SendV2(id int, ra *net.UDPAddr, version SnmpVersion, community string) error {
+	return self.Send(id, ra, &Arguments{Version: version, Community: community})
 }
 
-func (self *Pinger) Send(id int, raddr string, version SnmpVersion, community string) error {
+func (self *Pinger) SendV2With(id int, raddr string, version SnmpVersion, community string) error {
 	ra, err := net.ResolveUDPAddr(self.internal.network, raddr)
 	if err != nil {
 		return fmt.Errorf("ResolveIPAddr(%q, %q) failed: %v", self.internal.network, raddr, err)
 	}
 
-	return self.internal.SendPdu(id, ra, version, community, nil)
+	return self.SendV2(id, ra, version, community)
 }
 
-func (self *Pinger) SendV3(id int, raddr string, securityParams map[string]string) error {
+func (self *Pinger) SendV3(id int, raddr, username string) error {
 	ra, err := net.ResolveUDPAddr(self.internal.network, raddr)
 	if err != nil {
 		return fmt.Errorf("ResolveIPAddr(%q, %q) failed: %v", self.internal.network, raddr, err)
 	}
 
-	return self.internal.SendPdu(id, ra, V3, "", securityParams)
+	return self.Send(id, ra, &Arguments{Version: V3, UserName: username})
+}
+
+func (self *Pinger) Send(id int, ra *net.UDPAddr, args *Arguments) error {
+	return self.internal.Send(id, ra, args)
 }
 
 func (self *Pinger) Recv(timeout time.Duration) (net.Addr, SnmpVersion, error) {
