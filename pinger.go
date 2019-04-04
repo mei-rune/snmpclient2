@@ -350,6 +350,10 @@ func (self *Pingers) Length() int {
 	return len(self.internals)
 }
 
+func (self *Pingers) SendWith(idx int, raddr *net.UDPAddr) error {
+	return self.internals[idx].Send(0, raddr, nil)
+}
+
 func (self *Pingers) Send(idx int, raddr string) error {
 	return self.internals[idx].SendWith(raddr)
 }
