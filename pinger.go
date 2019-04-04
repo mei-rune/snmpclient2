@@ -29,7 +29,7 @@ type PingResult struct {
 	Addr      net.Addr
 	Version   SnmpVersion
 	Community string
-	Addition  map[string]interface{}
+	Username  string
 	Error     error
 	Timestamp time.Time
 }
@@ -38,7 +38,6 @@ type internal_pinger struct {
 	network      string
 	id           int
 	args         *Arguments
-	addition     map[string]interface{}
 	conn         net.PacketConn
 	wait         *sync.WaitGroup
 	ch           chan *PingResult
@@ -273,7 +272,7 @@ func (self *internal_pinger) serve() {
 			self.ch <- &PingResult{Id: managedId,
 				Addr:      ra,
 				Version:   SnmpVersion(version),
-				Addition:  self.addition,
+				Username:  self.args.UserName,
 				Timestamp: time.Now()}
 		} else {
 			pdu := &PduV1{}
@@ -298,7 +297,6 @@ func (self *internal_pinger) serve() {
 				Addr:      ra,
 				Version:   SnmpVersion(version),
 				Community: string(recvMsg.Community),
-				Addition:  self.addition,
 				Timestamp: time.Now()}
 		}
 
@@ -324,12 +322,12 @@ func (self *Pingers) Listen(network, laddr string, version SnmpVersion, communit
 	return nil
 }
 
-func (self *Pingers) ListenV3(network, laddr, userName string, addition map[string]interface{}) error {
+func (self *Pingers) ListenV3(network, laddr, userName string) error {
 	p, e := newPinger(network, laddr, &self.wait, self.ch, &Arguments{Version: V3, UserName: userName})
 	if nil != e {
 		return e
 	}
-	p.addition = addition
+
 	self.internals = append(self.internals, p)
 	return nil
 }
