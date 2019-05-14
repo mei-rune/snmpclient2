@@ -11,6 +11,7 @@ import (
 var (
 	address = flag.String("listen", ":161", "")
 	file    = flag.String("file", "", "")
+	miss    = flag.Int("miss", 0, "")
 )
 
 func main() {
@@ -25,6 +26,7 @@ func main() {
 		fmt.Println(e)
 		return
 	}
+	srv.SetMiss(*miss)
 	fmt.Println("listen at:", srv.GetPort())
 
 	os.Stdin.Read(make([]byte, 1))

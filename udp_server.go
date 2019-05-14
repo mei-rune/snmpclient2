@@ -93,6 +93,7 @@ func NewMibTree() *Tree {
 // ******************************************
 //  It is for test.
 type UdpServer struct {
+	miss       int
 	name       string
 	origin     string
 	conn       net.PacketConn
@@ -187,6 +188,10 @@ func NewUdpServerFromString(nm, addr, mibs string, is_update_mibs bool) (*UdpSer
 		return nil, e
 	}
 	return srv, srv.start()
+}
+
+func (self *UdpServer) SetMiss(miss int) {
+	self.miss = miss
 }
 
 func (self *UdpServer) ReturnErrorIfOidNotExists(status bool) *UdpServer {
@@ -312,11 +317,19 @@ func (self *UdpServer) serve() {
 
 	var cached_bytes [10240]byte
 
+	count := 0
+
 	for {
 		n, addr, err := self.conn.ReadFrom(cached_bytes[:])
 		if nil != err {
 			log.Println("[", self.name, "]", err.Error())
 			break
+		}
+
+		count++
+
+		if self.miss > 1 && count%self.miss == 0 {
+			continue
 		}
 
 		func(recv_bytes []byte) {
