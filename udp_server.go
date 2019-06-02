@@ -105,6 +105,8 @@ type UdpServer struct {
 
 	return_error_if_oid_not_exists bool
 	is_update_mibs                 bool
+	community                      string
+	mibsByEngine                   map[string]*Tree
 	mibs                           *Tree
 }
 
@@ -166,25 +168,9 @@ func NewUdpServerFromString(nm, addr, mibs string, is_update_mibs bool) (*UdpSer
 		origin:         addr,
 		is_update_mibs: is_update_mibs,
 		mibs:           NewMibTree(),
+		mibsByEngine:   map[string]*Tree{},
 		mpv1:           NewCommunity()}
-	if e := Read(bytes.NewReader([]byte(mibs)), func(oid Oid, value Variable) error {
-		if ok := srv.mibs.Insert(&OidAndValue{Oid: oid,
-			Value: value}); !ok {
-
-			if srv.is_update_mibs {
-				if ok = srv.mibs.DeleteWithKey(oid); !ok {
-					return errors.New("insert '" + oid.String() + "' failed, delete failed.")
-				}
-				if ok = srv.mibs.Insert(&OidAndValue{Oid: oid,
-					Value: value}); !ok {
-					return errors.New("insert '" + oid.String() + "' failed.")
-				}
-			} else {
-				return errors.New("insert '" + oid.String() + "' failed.")
-			}
-		}
-		return nil
-	}); nil != e {
+	if e := srv.LoadMibsFromString(mibs); nil != e {
 		return nil, e
 	}
 	return srv, srv.start()
@@ -200,38 +186,62 @@ func (self *UdpServer) ReturnErrorIfOidNotExists(status bool) *UdpServer {
 }
 
 func (self *UdpServer) ReloadMibsFromFile(file string) error {
-	bs, e := ioutil.ReadFile(file)
-	if nil != e {
-		return e
-	}
-
-	self.mibs = NewMibTree()
-	return self.LoadMibsFromString(string(bs))
+	return self.LoadFileTo("", file, true)
 }
 
 func (self *UdpServer) ReloadMibsFromString(mibs string) error {
-	self.mibs = NewMibTree()
-	return self.LoadMibsFromString(mibs)
+	return self.LoadMibsIntoEngine("", bytes.NewReader([]byte(mibs)), true)
 }
 
 func (self *UdpServer) LoadFile(file string) error {
+	return self.LoadFileTo("", file, false)
+}
+
+func (self *UdpServer) LoadFileTo(engineID, file string, isReset bool) error {
 	mibs, e := ioutil.ReadFile(file)
 	if nil != e {
 		return e
 	}
-	return self.LoadMibsFromString(string(mibs))
+	return self.LoadMibsIntoEngine(engineID, bytes.NewReader(mibs), isReset)
 }
 
 func (self *UdpServer) LoadMibsFromString(mibs string) error {
-	if e := Read(bytes.NewReader([]byte(mibs)), func(oid Oid, value Variable) error {
+	return self.LoadMibsIntoEngine("", bytes.NewReader([]byte(mibs)), false)
+}
+
+func (self *UdpServer) LoadMibsIntoEngine(engineID string, rd io.Reader, isReset bool) error {
+	var mibs *Tree
+	if engineID == "" || engineID == self.community {
+		if isReset {
+			self.mibs = NewMibTree()
+			mibs = self.mibs
+		}
+	} else {
+		if self.mibsByEngine != nil {
+			self.mibsByEngine = map[string]*Tree{}
+		}
+
+		if isReset {
+			mibs = NewMibTree()
+			self.mibsByEngine[engineID] = mibs
+		} else {
+			mibs = self.mibsByEngine[engineID]
+			if mibs == nil {
+				mibs = NewMibTree()
+				self.mibsByEngine[engineID] = mibs
+			}
+		}
+	}
+
+	if e := Read(rd, func(oid Oid, value Variable) error {
 		if ok := self.mibs.Insert(&OidAndValue{Oid: oid,
 			Value: value}); !ok {
 
 			if self.is_update_mibs {
-				if ok = self.mibs.DeleteWithKey(oid); !ok {
+				if ok = mibs.DeleteWithKey(oid); !ok {
 					return errors.New("insert '" + oid.String() + "' failed, delete failed.")
 				}
-				if ok = self.mibs.Insert(&OidAndValue{Oid: oid,
+				if ok = mibs.Insert(&OidAndValue{Oid: oid,
 					Value: value}); !ok {
 					return errors.New("insert '" + oid.String() + "' failed.")
 				}
@@ -425,12 +435,28 @@ func (self *UdpServer) on_v2(addr net.Addr, p *MessageV1, cached_bytes []byte) {
 		version: p.Version(),
 		pdu:     pdu,
 	}
+
+	var mibs *Tree
+	if self.mibsByEngine != nil {
+		mibs = self.mibsByEngine[string(p.Community)]
+	}
+	if mibs == nil {
+		if self.community == "" || self.community == string(p.Community) {
+			mibs = self.mibs
+		}
+	}
+
+	if mibs == nil {
+		return
+	}
+
 	//res.SetMaxMsgSize(p.GetMaxMsgSize())
 
 	switch p.PDU().PduType() {
 	case GetRequest:
 		for _, vb := range p.PDU().VariableBindings() {
-			v := self.GetValueByOid(vb.Oid)
+
+			v := self.GetValueByOid(mibs, vb.Oid)
 			if nil == v {
 				if self.return_error_if_oid_not_exists {
 					pdu.SetErrorStatus(NoSuchName)
@@ -442,7 +468,7 @@ func (self *UdpServer) on_v2(addr net.Addr, p *MessageV1, cached_bytes []byte) {
 		}
 	case GetNextRequest:
 		for _, vb := range p.PDU().VariableBindings() {
-			o, v := self.GetNextValueByOid(vb.Oid)
+			o, v := self.GetNextValueByOid(mibs, vb.Oid)
 			if nil == v {
 				continue
 			}
@@ -469,8 +495,8 @@ func (self *UdpServer) on_v2(addr net.Addr, p *MessageV1, cached_bytes []byte) {
 	}
 }
 
-func (self *UdpServer) GetValueByOid(oid Oid) Variable {
-	if v := self.mibs.Get(oid); nil != v {
+func (self *UdpServer) GetValueByOid(mibs *Tree, oid Oid) Variable {
+	if v := mibs.Get(oid); nil != v {
 		if sv, ok := v.(*OidAndValue); ok {
 			return sv.Value
 		}
@@ -479,8 +505,8 @@ func (self *UdpServer) GetValueByOid(oid Oid) Variable {
 	return nil
 }
 
-func (self *UdpServer) GetNextValueByOid(oid Oid) (*Oid, Variable) {
-	it := self.mibs.FindGE(oid)
+func (self *UdpServer) GetNextValueByOid(mibs *Tree, oid Oid) (*Oid, Variable) {
+	it := mibs.FindGE(oid)
 	if it.Limit() {
 		return nil, nil
 	}
