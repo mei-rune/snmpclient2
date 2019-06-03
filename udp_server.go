@@ -176,6 +176,10 @@ func NewUdpServerFromString(nm, addr, mibs string, is_update_mibs bool) (*UdpSer
 	return srv, srv.start()
 }
 
+func (self *UdpServer) SetCommunity(community string) {
+	self.community = community
+}
+
 func (self *UdpServer) SetMiss(miss int) {
 	self.miss = miss
 }
@@ -214,10 +218,10 @@ func (self *UdpServer) LoadMibsIntoEngine(engineID string, rd io.Reader, isReset
 	if engineID == "" || engineID == self.community {
 		if isReset {
 			self.mibs = NewMibTree()
-			mibs = self.mibs
 		}
+		mibs = self.mibs
 	} else {
-		if self.mibsByEngine != nil {
+		if self.mibsByEngine == nil {
 			self.mibsByEngine = map[string]*Tree{}
 		}
 
@@ -234,7 +238,7 @@ func (self *UdpServer) LoadMibsIntoEngine(engineID string, rd io.Reader, isReset
 	}
 
 	if e := Read(rd, func(oid Oid, value Variable) error {
-		if ok := self.mibs.Insert(&OidAndValue{Oid: oid,
+		if ok := mibs.Insert(&OidAndValue{Oid: oid,
 			Value: value}); !ok {
 
 			if self.is_update_mibs {
@@ -447,6 +451,10 @@ func (self *UdpServer) on_v2(addr net.Addr, p *MessageV1, cached_bytes []byte) {
 	}
 
 	if mibs == nil {
+		fmt.Println("=========", string(p.Community))
+		for key := range self.mibsByEngine {
+			fmt.Println(key)
+		}
 		return
 	}
 
