@@ -274,7 +274,7 @@ func TestReadFromString(t *testing.T) {
 			t.Error(e)
 			continue
 		}
-		v := srv.GetValueByOid(oid)
+		v := srv.GetValueByOid(srv.mibs, oid)
 		if nil == v {
 			t.Error("test[", idx, "]", test.oid, "is not found.")
 			continue
@@ -291,7 +291,7 @@ func TestReadFromString(t *testing.T) {
 			t.Error(e)
 			continue
 		}
-		_, v := srv.GetNextValueByOid(oid)
+		_, v := srv.GetNextValueByOid(srv.mibs, oid)
 		if nil == v {
 			t.Error("test[", idx, "]", test.oid, "is not found.")
 			continue
