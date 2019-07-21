@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"net/textproto"
 	"regexp"
@@ -100,7 +101,8 @@ func ParseHexString(ss []string, is_end bool, vs string) (Variable, []string, er
 			strings.Contains(sss, "MIB search path") ||
 			strings.Contains(sss, "Cannot find module") ||
 			strings.Contains(sss, "#tools\\snmpwalk.exe") ||
-			strings.HasPrefix(sss, "Timeout: No Response from") {
+			strings.HasPrefix(sss, "Timeout: No Response from") ||
+			strings.Contains(sss, "# ====") {
 			p = idx
 			break
 		}
@@ -110,11 +112,11 @@ func ParseHexString(ss []string, is_end bool, vs string) (Variable, []string, er
 		if is_end {
 			var buf bytes.Buffer
 			if e := ReadHex(&buf, strings.TrimSpace(vs)); nil != e {
-				return nil, nil, errors.New("parse `" + strings.Join(ss, "\r\n") + "` failed, " + e.Error())
+				return nil, nil, errors.New("1parse `" + strings.Join(ss, "\r\n") + "` failed, " + e.Error())
 			}
 			for _, s := range ss[1:] {
 				if e := ReadHex(&buf, s); nil != e {
-					return nil, nil, errors.New("parse `" + strings.Join(ss, "\r\n") + "` failed, " + e.Error())
+					return nil, nil, errors.New("2parse `" + strings.Join(ss, "\r\n") + "` failed, " + e.Error())
 				}
 			}
 			return NewOctetString(buf.Bytes()), nil, nil
@@ -125,14 +127,14 @@ func ParseHexString(ss []string, is_end bool, vs string) (Variable, []string, er
 
 	var buf bytes.Buffer
 	if e := ReadHex(&buf, strings.TrimSpace(vs)); nil != e {
-		return nil, nil, errors.New("parse `" + strings.Join(ss, "\r\n") + "` failed, " + e.Error())
+		return nil, nil, errors.New("3parse `" + strings.Join(ss, "\r\n") + "` failed, " + e.Error())
 	}
 	for _, s := range ss[1:p] {
 		if strings.HasPrefix(s, "#") {
 			return NewOctetString(buf.Bytes()), ss[p:], nil
 		}
 		if e := ReadHex(&buf, s); nil != e {
-			return nil, nil, errors.New("parse `" + strings.Join(ss, "\r\n") + "` failed, " + e.Error())
+			return nil, nil, errors.New("4parse `" + strings.Join(ss, "\r\n") + "` failed, " + e.Error())
 		}
 	}
 	return NewOctetString(buf.Bytes()), ss[p:], nil
@@ -166,11 +168,27 @@ func ParseLine(ss []string, is_end bool) (*Oid, Variable, []string, error) {
 			strings.HasPrefix(ss[0], "Timeout: No Response from") {
 			return nil, nil, nil, empty_line
 		}
+		return nil, nil, nil, empty_line
 		//MIB search path: c:/usr/share/snmp/mibs
 		//Cannot find module (abc): At line 0 in (none)
-		return nil, nil, nil, errors.New("parse `" + strings.Join(ss, "\r\n") + "` failed, first line is not \"x = y\".")
+		// return nil, nil, nil, errors.New("parse `" + strings.Join(ss, "\r\n") + "` failed, first line is not \"x = y\".")
 	}
-	oid_str := strings.TrimSpace(strings.Replace(sa[0], "iso", "1", 1))
+	if strings.Contains(ss[0], "# ====") {
+		return nil, nil, nil, empty_line
+	}
+	if strings.Contains(ss[0], "#exit") {
+		return nil, nil, nil, empty_line
+	}
+
+	oid_str := strings.Replace(sa[0], "iso", "1", 1)
+	if strings.HasPrefix(oid_str, "so.") {
+		oid_str = "1." + strings.TrimPrefix(oid_str, "so.")
+	}
+	if strings.HasPrefix(oid_str, "o.") {
+		oid_str = "1." + strings.TrimPrefix(oid_str, "o.")
+	}
+	oid_str = strings.Trim(oid_str, ".")
+	oid_str = strings.TrimSpace(oid_str)
 	oid, e := ParseOidFromString(oid_str)
 	if nil != e {
 		return nil, nil, nil, errors.New("parse `" + strings.Join(ss, "\r\n") + "` failed, " + e.Error())
@@ -183,7 +201,9 @@ func ParseLine(ss []string, is_end bool) (*Oid, Variable, []string, error) {
 		if 1 == len(ss) {
 			if strings.HasPrefix(simple_line, "\"") &&
 				strings.HasSuffix(simple_line, "\"") {
-				v, e := NewOctetStringFromString(simple_line[1 : len(simple_line)-1])
+				simple_line = strings.TrimPrefix(simple_line, "\"")
+				simple_line = strings.TrimSuffix(simple_line, "\"")
+				v, e := NewOctetStringFromString(simple_line)
 				return &oid, v, nil, e
 			}
 		}
@@ -218,10 +238,15 @@ func ParseLine(ss []string, is_end bool) (*Oid, Variable, []string, error) {
 			return &Oid{}, nil, nil, errors.New("parse `" +
 				strings.Join(ss, "\r\n") + "` failed, it is not muti line.")
 		}
+
 		switch t {
 		case "OID":
 			v, e = NewOidFromString(strings.TrimSpace(strings.Replace(tv[1], "iso", "1", 1)))
 		case "INTEGER":
+			if strings.TrimSpace(tv[1]) == "" {
+				v = NewInteger(0)
+				break
+			}
 			v, e = NewIntegerFromString(strings.TrimSpace(tv[1]))
 		case "Gauge32":
 			v, e = NewGauge32FromString(strings.TrimSpace(tv[1]))
@@ -247,7 +272,7 @@ func ParseLine(ss []string, is_end bool) (*Oid, Variable, []string, error) {
 			v, e = NewIPAddressFromString(strings.TrimSpace(tv[1]))
 		default:
 			return &Oid{}, nil, nil, errors.New("parse `" +
-				strings.Join(ss, "\r\n") + "` failed, it is not supported.")
+				strings.Join(ss, "\r\n") + "` failed, it is not supported - " + t)
 		}
 	}
 	return &oid, v, nil, e
@@ -268,7 +293,11 @@ func Read(reader io.Reader, cb func(oid Oid, value Variable) error) error {
 						s = remain
 						continue
 					}
-					return e
+					// return e
+					fmt.Println(e)
+
+					s = remain
+					continue
 				}
 
 				if e = cb(*oid, value); nil != e {
@@ -297,7 +326,12 @@ func Read(reader io.Reader, cb func(oid Oid, value Variable) error) error {
 				s = remain
 				continue
 			}
-			return e
+
+			//return e
+			fmt.Println(e)
+
+			s = remain
+			continue
 		}
 
 		if e = cb(*oid, value); nil != e {

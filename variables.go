@@ -411,12 +411,12 @@ func ParseIntsFromString(s string) ([]int, error) {
 			continue
 		}
 
-		if 0 != idx {
-			return nil, ArgumentError{
-				Value:   s,
-				Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, uint32(math.MaxUint32)),
-			}
-		}
+		// if 0 != idx {
+		// 	return nil, ArgumentError{
+		// 		Value:   s,
+		// 		Message: fmt.Sprintf("The sub-identifiers is range %d..%d", 0, uint32(math.MaxUint32)),
+		// 	}
+		// }
 
 		// Value   Name
 		//   0     ccitt
