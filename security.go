@@ -166,23 +166,23 @@ func (u *USM) GenerateRequestMessage(args *Arguments, sendMsg Message) (err erro
 	if m.Authentication() {
 		// encrypt PDU
 		if m.Privacy() {
-
-			// 		u.AuthKey = PasswordToKey(args.AuthProtocol, args.AuthPassword, authEngineId)
-			// 	}
-			// 	if len(args.PrivPassword) > 0 {
-			PrivKey := PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
-			err = encrypt(m, args.PrivProtocol, PrivKey)
+			privKey := args.PrivKey
+			if len(privKey) == 0 {
+				privKey = PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+			}
+			err = encrypt(m, args.PrivProtocol, privKey)
 			if err != nil {
 				return err
 			}
 		}
 
-		//fmt.Println(args.AuthProtocol, args.AuthPassword, ToHexStr(u.AuthEngineId, ""))
-		AuthKey := PasswordToKey(args.AuthProtocol, args.AuthPassword, u.AuthEngineId)
-		//fmt.Println(ToHexStr(AuthKey, ""))
+		authKey := args.AuthKey
+		if len(authKey) == 0 {
+			authKey = PasswordToKey(args.AuthProtocol, args.AuthPassword, u.AuthEngineId)
+		}
 
 		// get digest of whole message
-		digest, err := mac(m, args.AuthProtocol, AuthKey)
+		digest, err := mac(m, args.AuthProtocol, authKey)
 		if err != nil {
 			return err
 		}

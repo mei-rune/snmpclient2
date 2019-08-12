@@ -19,11 +19,13 @@ type Arguments struct {
 	SecurityLevel    SecurityLevel // Security level (V3 specific)
 	AuthPassword     string        // Authentication protocol pass phrase (V3 specific)
 	AuthProtocol     AuthProtocol  // Authentication protocol (V3 specific)
-	PrivPassword     string        // Privacy protocol pass phrase (V3 specific)
-	PrivProtocol     PrivProtocol  // Privacy protocol (V3 specific)
-	SecurityEngineId string        // Security engine ID (V3 specific)
-	ContextEngineId  string        // Context engine ID (V3 specific)
-	ContextName      string        // Context name (V3 specific)
+	AuthKey          []byte
+	PrivPassword     string       // Privacy protocol pass phrase (V3 specific)
+	PrivProtocol     PrivProtocol // Privacy protocol (V3 specific)
+	PrivKey          []byte
+	SecurityEngineId string // Security engine ID (V3 specific)
+	ContextEngineId  string // Context engine ID (V3 specific)
+	ContextName      string // Context name (V3 specific)
 }
 
 func (a *Arguments) setDefault() {
