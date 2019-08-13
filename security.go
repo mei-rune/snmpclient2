@@ -235,6 +235,11 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 	// }
 
 	if rm.Authentication() {
+		//    authKey := args.AuthKey
+		//		if len(authKey) == 0 {
+		//			authKey = PasswordToKey(args.AuthProtocol, args.AuthPassword, u.AuthEngineId)
+		//		}
+
 		// get & check digest of whole message
 		// digest, e := mac(rm, args.AuthProtocol, u.AuthKey)
 		// if e != nil {
@@ -252,8 +257,13 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 
 		// decrypt PDU
 		if rm.Privacy() {
-			PrivKey := PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
-			e := decrypt(rm, args.PrivProtocol, PrivKey, rm.PrivParameter)
+			privKey := args.PrivKey
+			if len(privKey) == 0 {
+				privKey = PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+			}
+
+			// PrivKey := PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+			e := decrypt(rm, args.PrivProtocol, privKey, rm.PrivParameter)
 			if e != nil {
 				return ResponseError{
 					Cause:   e,
