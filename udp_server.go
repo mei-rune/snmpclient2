@@ -451,7 +451,6 @@ func (self *UdpServer) on_v2(addr net.Addr, p *MessageV1, cached_bytes []byte) {
 	}
 
 	if mibs == nil {
-		fmt.Println("=========", string(p.Community))
 		for key := range self.mibsByEngine {
 			fmt.Println(key)
 		}

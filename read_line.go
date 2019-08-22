@@ -37,7 +37,9 @@ func ParseString(ss []string, is_end bool, vs string) (Variable, []string, error
 			//strings.HasPrefix(sss, "#") ||
 			strings.HasPrefix(sss, "Cannot find module") ||
 			strings.HasPrefix(sss, "#tools\\snmpwalk.exe") ||
-			strings.HasPrefix(sss, "Timeout: No Response from") {
+			strings.HasPrefix(sss, "No log handling enabled") ||
+			strings.HasPrefix(sss, "Timeout: No Response from") ||
+			strings.Contains(sss, "# ====") {
 			p = idx
 			break
 		}
@@ -102,6 +104,7 @@ func ParseHexString(ss []string, is_end bool, vs string) (Variable, []string, er
 			strings.Contains(sss, "Cannot find module") ||
 			strings.Contains(sss, "#tools\\snmpwalk.exe") ||
 			strings.HasPrefix(sss, "Timeout: No Response from") ||
+			strings.HasPrefix(sss, "No log handling enabled") ||
 			strings.Contains(sss, "# ====") {
 			p = idx
 			break
