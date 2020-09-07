@@ -268,7 +268,7 @@ type PduV1 struct {
 	AgentAddress     Ipaddress
 	GenericTrap      int
 	SpecificTrap     int
-	Timestamp        asn1.BitString
+	Timestamp        int
 }
 
 func (pdu *PduV1) PduType() PduType {
@@ -412,7 +412,7 @@ func (pdu *PduV1) Unmarshal(b []byte) (rest []byte, err error) {
 	var agentAddress Ipaddress
 	var genericTrap int
 	var specificTrap int
-	var timestamp asn1.BitString
+	var timestamp int
 
 	next := raw.Bytes
 

@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -261,10 +262,17 @@ func (self *UdpServer) LoadMibsIntoEngine(engineID string, rd io.Reader, isReset
 }
 func (self *UdpServer) GetPort() string {
 	s := self.listenAddr.String()
-	if i := strings.LastIndex(s, ":"); -1 != i {
-		return s[i+1:]
+	_, port, _ := net.SplitHostPort(s)
+	return port
+}
+
+func (self *UdpServer) GetIntPort() int {
+	port := self.GetPort()
+	if port == "" {
+		return 0
 	}
-	return ""
+	i, _ := strconv.Atoi(port)
+	return i
 }
 
 func (self *UdpServer) Close() {
@@ -447,6 +455,8 @@ func (self *UdpServer) on_v2(addr net.Addr, p *MessageV1, cached_bytes []byte) {
 	if mibs == nil {
 		if self.community == "" || self.community == string(p.Community) {
 			mibs = self.mibs
+		} else {
+			log.Println("community isnot match")
 		}
 	}
 

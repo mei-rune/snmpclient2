@@ -319,8 +319,7 @@ func (s *SNMP) V1Trap(enterprise Oid, agentAddress Ipaddress, genericTrap int,
 	pdu.AgentAddress = agentAddress
 	pdu.GenericTrap = genericTrap
 	pdu.SpecificTrap = specificTrap
-	pdu.Timestamp.Bytes = []byte{0}
-	pdu.Timestamp.BitLength = 0
+	pdu.Timestamp = 0
 
 	var err error
 	retry(int(s.args.Retries), func() error {
