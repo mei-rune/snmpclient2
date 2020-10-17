@@ -275,12 +275,14 @@ func (self *UdpServer) GetIntPort() int {
 	return i
 }
 
-func (self *UdpServer) Close() {
+func (self *UdpServer) Close() error {
 	if self.conn != nil {
 		self.conn.Close()
 		self.waitGroup.Wait()
 		self.conn = nil
 	}
+
+	return nil
 }
 
 func (self *UdpServer) Pause() error {
