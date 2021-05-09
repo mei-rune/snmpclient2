@@ -242,6 +242,13 @@ func (self *UdpServer) LoadMibsFromString(mibs string) error {
 }
 
 func (self *UdpServer) LoadMibsIntoEngine(engineID string, rd io.Reader, isReset bool) error {
+	defer func() {
+		closer, ok := rd.(io.Closer)
+		if ok && closer != nil {
+			closer.Close()
+		}
+	}()
+
 	var mibs *Tree
 	if engineID == "" || engineID == self.community {
 		if isReset {
