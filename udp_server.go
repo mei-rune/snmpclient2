@@ -1,15 +1,16 @@
 package snmpclient2
 
 import (
+	"archive/zip"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -202,12 +203,38 @@ func (self *UdpServer) LoadFile(file string) error {
 	return self.LoadFileTo("", file, false)
 }
 
-func (self *UdpServer) LoadFileTo(engineID, file string, isReset bool) error {
-	mibs, e := ioutil.ReadFile(file)
-	if nil != e {
-		return e
+func (self *UdpServer) LoadFileTo(engineID, filename string, isReset bool) error {
+	ext := filepath.Ext(filename)
+	if ext != ".zip" {
+		r, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
+		return self.LoadMibsIntoEngine(engineID, r, isReset)
 	}
-	return self.LoadMibsIntoEngine(engineID, bytes.NewReader(mibs), isReset)
+
+	r, err := zip.OpenReader(filename)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	if len(r.File) == 0 {
+		return errors.New("'" + filename + "' is empty")
+	}
+
+	if len(r.File) > 1 {
+		for idx := range r.File {
+			fmt.Println(r.File[idx].Name)
+		}
+		return errors.New("'" + filename + "' is muti files")
+	}
+
+	rc, err := r.File[0].Open()
+	if err != nil {
+		return err
+	}
+	return self.LoadMibsIntoEngine(engineID, rc, isReset)
 }
 
 func (self *UdpServer) LoadMibsFromString(mibs string) error {
