@@ -117,51 +117,11 @@ func NewUdpServerFromFile(nm, addr, file string, is_update_mibs bool) (*UdpServe
 		origin:         addr,
 		is_update_mibs: is_update_mibs,
 		mibs:           NewMibTree(),
+		mibsByEngine:   map[string]*Tree{},
 		mpv1:           NewCommunity()}
-
-	var r io.ReadCloser
-	var e error
-
-	if strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://") {
-		resp, err := http.Get(file)
-		if err != nil {
-			return nil, err
-		}
-		if resp.StatusCode != http.StatusOK {
-			if resp.Body != nil {
-				io.Copy(os.Stdout, resp.Body)
-			}
-			return nil, errors.New(resp.Status)
-		}
-		r = resp.Body
-	} else {
-		r, e = os.Open(file)
+	if err := srv.LoadFile(file); err != nil {
+		return nil, err
 	}
-	if nil != e {
-		return nil, e
-	}
-	if e := Read(r, func(oid Oid, value Variable) error {
-		if ok := srv.mibs.Insert(&OidAndValue{Oid: oid,
-			Value: value}); !ok {
-			if srv.is_update_mibs {
-				if ok = srv.mibs.DeleteWithKey(oid); !ok {
-					return errors.New("insert '" + oid.String() + "' failed, delete failed.")
-				}
-				if ok = srv.mibs.Insert(&OidAndValue{Oid: oid,
-					Value: value}); !ok {
-					return errors.New("insert '" + oid.String() + "' failed.")
-				}
-			} else {
-				return errors.New("insert '" + oid.String() + "' failed.")
-			}
-		}
-		return nil
-	}); nil != e {
-		return nil, e
-	}
-
-	r.Close()
-
 	return srv, srv.start()
 }
 
@@ -204,6 +164,21 @@ func (self *UdpServer) LoadFile(file string) error {
 }
 
 func (self *UdpServer) LoadFileTo(engineID, filename string, isReset bool) error {
+	if strings.HasPrefix(filename, "http://") || strings.HasPrefix(filename, "https://") {
+		resp, err := http.Get(filename)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != http.StatusOK {
+			if resp.Body != nil {
+				io.Copy(os.Stdout, resp.Body)
+			}
+			return errors.New(resp.Status)
+		}
+
+		return self.LoadMibsIntoEngine(engineID, resp.Body, isReset)
+	}
+
 	ext := filepath.Ext(filename)
 	if ext != ".zip" {
 		r, err := os.Open(filename)
@@ -243,6 +218,13 @@ func (self *UdpServer) LoadMibsFromString(mibs string) error {
 
 func (self *UdpServer) LoadMibsIntoEngine(engineID string, rd io.Reader, isReset bool) error {
 	defer func() {
+		if f, ok := rd.(*os.File); ok {
+			if f != nil {
+				f.Close()
+			}
+			return
+		}
+
 		closer, ok := rd.(io.Closer)
 		if ok && closer != nil {
 			closer.Close()
