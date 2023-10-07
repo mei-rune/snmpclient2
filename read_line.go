@@ -93,10 +93,57 @@ func ReadHex(buf *bytes.Buffer, s string) error {
 	return nil
 }
 
+func isHex(s string) bool {
+	bs := []byte(s)
+	for len(bs) > 0 {
+		for unicode.IsSpace(rune(bs[0])) {
+			bs = bs[1:]
+
+			if len(bs) == 0 {
+				break
+			}
+		}
+		if len(bs) == 0 {
+			break
+		}
+		if len(bs) < 1 {
+			break
+		}
+
+		if !unicode.IsDigit(rune(bs[0])) && 
+			(bs[0] < 'a' || bs[0] > 'f') &&
+			(bs[0] < 'A' || bs[0] > 'F') {
+				return false
+		}
+		if !unicode.IsDigit(rune(bs[1])) && 
+			(bs[1] < 'a' || bs[1] > 'f') &&
+			(bs[1] < 'A' || bs[1] > 'F') {
+				return false
+		}
+
+		bs = bs[2:]
+	}
+
+	return true
+}
+
 func ParseHexString(ss []string, is_end bool, vs string) (Variable, []string, error) {
 	p := -1
 	for idx, sss := range ss[1:] {
-		if re.MatchString(sss) {
+		if isHex(sss) {
+			// 提高性能用的
+			continue
+		}
+
+		if strings.HasPrefix(sss, "1.3.6") {
+			// 提高性能用的
+			p = idx
+			break
+		} else if strings.HasPrefix(sss, "iso.3.6") {
+			// 提高性能用的
+			p = idx
+			break
+		} else if re.MatchString(sss) {
 			p = idx
 			break
 		} else if strings.HasPrefix(sss, "#") ||

@@ -215,18 +215,27 @@ func (self *internal_pinger) serve() {
 
 	cached := make([]byte, 4000)
 
+	errCount := 0
 	for 1 == atomic.LoadInt32(&self.is_running) {
 		l, ra, err := self.conn.ReadFrom(cached)
 		if err != nil {
-			if strings.Contains(err.Error(), "No service is operating") { //Port Unreachable
-				continue
+
+			if errCount < 100 {
+				if strings.Contains(err.Error(), "No service is operating") { //Port Unreachable
+					errCount ++
+					continue
+				}
+				if strings.Contains(err.Error(), "forcibly closed by the remote host") { //Port Unreachable
+					errCount ++
+					continue
+				}
 			}
-			if strings.Contains(err.Error(), "forcibly closed by the remote host") { //Port Unreachable
-				continue
-			}
+
 			self.ch <- &PingResult{Error: fmt.Errorf("ReadFrom failed: %v, %v", ra, err)}
 			continue
 		}
+		errCount = 0
+
 		recv_bytes := cached[:l]
 
 		var raw asn1.RawValue
@@ -299,7 +308,6 @@ func (self *internal_pinger) serve() {
 				Community: string(recvMsg.Community),
 				Timestamp: time.Now()}
 		}
-
 	}
 }
 

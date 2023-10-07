@@ -173,8 +173,13 @@ func (s SecurityLevel) String() string {
 type AuthProtocol string
 
 const (
-	Md5 AuthProtocol = "MD5"
-	Sha AuthProtocol = "SHA"
+	NoAuth AuthProtocol = "NoAuth"
+	Md5    AuthProtocol = "MD5"
+	Sha    AuthProtocol = "SHA"
+	SHA224 AuthProtocol = "SHA224"
+	SHA256 AuthProtocol = "SHA256"
+	SHA384 AuthProtocol = "SHA384"
+	SHA512 AuthProtocol = "SHA512"
 )
 
 type PrivProtocol string
@@ -182,6 +187,10 @@ type PrivProtocol string
 const (
 	Des PrivProtocol = "DES"
 	Aes PrivProtocol = "AES"
+	AES192  PrivProtocol = "AES192"
+	AES256  PrivProtocol = "AES256"
+	AES192C PrivProtocol = "AES192C"
+	AES256C PrivProtocol = "AES256C"
 )
 
 const (
