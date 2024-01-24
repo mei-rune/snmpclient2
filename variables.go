@@ -434,16 +434,18 @@ func ParseIntsFromString(s string) ([]int, error) {
 			result = append(result, 3)
 		case "SNMPv2-SMI::zeroDotZero":
 			result = append(result, 0, 0)
-		case "SNMPv2-SMI::internet":
+		case "SNMPv2-SMI::internet", "internet":
 			result = append(result, 1, 3, 6, 1)
-		case "SNMPv2-SMI::experimental":
+		case "SNMPv2-SMI::experimental", "experimental":
 			result = append(result, 1, 3, 6, 1, 3)
-		case "SNMPv2-SMI::private":
+		case "SNMPv2-SMI::private", "private":
 			result = append(result, 1, 3, 6, 1, 4)
-		case "SNMPv2-SMI::enterprises":
+		case "SNMPv2-SMI::enterprises", "enterprises":
 			result = append(result, 1, 3, 6, 1, 4, 1)
-		case "SNMPv2-SMI::security":
+		case "SNMPv2-SMI::security", "security":
 			result = append(result, 1, 3, 6, 1, 5)
+		case "null":
+			result = nil
 		default:
 			return nil, ArgumentError{
 				Value:   s,
