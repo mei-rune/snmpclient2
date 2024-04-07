@@ -265,9 +265,7 @@ type node struct {
 
 var negativeLimitNode *node
 
-//
 // Internal node attribute accessors
-//
 func getColor(n *node) int {
 	if n == nil {
 		return black

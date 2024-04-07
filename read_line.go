@@ -110,15 +110,15 @@ func isHex(s string) bool {
 			break
 		}
 
-		if !unicode.IsDigit(rune(bs[0])) && 
+		if !unicode.IsDigit(rune(bs[0])) &&
 			(bs[0] < 'a' || bs[0] > 'f') &&
 			(bs[0] < 'A' || bs[0] > 'F') {
-				return false
+			return false
 		}
-		if !unicode.IsDigit(rune(bs[1])) && 
+		if !unicode.IsDigit(rune(bs[1])) &&
 			(bs[1] < 'a' || bs[1] > 'f') &&
 			(bs[1] < 'A' || bs[1] > 'F') {
-				return false
+			return false
 		}
 
 		bs = bs[2:]

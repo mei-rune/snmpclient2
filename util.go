@@ -151,22 +151,38 @@ func ParseSecurityLevel(s string) (SecurityLevel, error) {
 func ParseAuthProtocol(s string) (AuthProtocol, error) {
 	switch s {
 	case "md5", "MD5":
-		return Md5, nil
+		return MD5, nil
 	case "sha", "SHA":
-		return Sha, nil
+		return SHA, nil
+	case "sha224", "SHA224":
+		return SHA224, nil
+	case "sha256", "SHA256":
+		return SHA256, nil
+	case "sha384", "SHA384":
+		return SHA384, nil
+	case "sha512", "SHA512":
+		return SHA512, nil
 	default:
-		return "", errors.New("AuthProtocol '" + s + "' is unsupported.")
+		return NoAuth, errors.New("AuthProtocol '" + s + "' is unsupported.")
 	}
 }
 
 func ParsePrivProtocol(s string) (PrivProtocol, error) {
 	switch s {
 	case "des", "DES":
-		return Des, nil
+		return DES, nil
 	case "aes", "AES":
-		return Aes, nil
+		return AES, nil
+	case "aes192", "AES192":
+		return AES192, nil
+	case "aes256", "AES256":
+		return AES256, nil
+	case "aes192c", "AES192C":
+		return AES192C, nil
+	case "aes256c", "AES256C":
+		return AES256C, nil
 	default:
-		return "", errors.New("PrivProtocol '" + s + "' is unsupported.")
+		return NoPriv, errors.New("PrivProtocol '" + s + "' is unsupported.")
 	}
 }
 

@@ -149,49 +149,6 @@ func (e ErrorStatus) String() string {
 	}
 }
 
-type SecurityLevel int
-
-const (
-	NoAuthNoPriv SecurityLevel = iota
-	AuthNoPriv
-	AuthPriv
-)
-
-func (s SecurityLevel) String() string {
-	switch s {
-	case NoAuthNoPriv:
-		return "NoAuthNoPriv"
-	case AuthNoPriv:
-		return "AuthNoPriv"
-	case AuthPriv:
-		return "AuthPriv"
-	default:
-		return "Unknown"
-	}
-}
-
-type AuthProtocol string
-
-const (
-	NoAuth AuthProtocol = "NoAuth"
-	Md5    AuthProtocol = "MD5"
-	Sha    AuthProtocol = "SHA"
-	SHA224 AuthProtocol = "SHA224"
-	SHA256 AuthProtocol = "SHA256"
-	SHA384 AuthProtocol = "SHA384"
-	SHA512 AuthProtocol = "SHA512"
-)
-
-type PrivProtocol string
-
-const (
-	Des PrivProtocol = "DES"
-	Aes PrivProtocol = "AES"
-	AES192  PrivProtocol = "AES192"
-	AES256  PrivProtocol = "AES256"
-	AES192C PrivProtocol = "AES192C"
-	AES256C PrivProtocol = "AES256C"
-)
 
 const (
 	timeoutDefault = 5 * time.Second

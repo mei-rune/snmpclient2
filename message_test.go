@@ -153,9 +153,9 @@ func TestMessageProcessingV3(t *testing.T) {
 		UserName:      "myName",
 		SecurityLevel: snmpclient2.AuthPriv,
 		AuthPassword:  "aaaaaaaa",
-		AuthProtocol:  snmpclient2.Md5,
+		AuthProtocol:  snmpclient2.MD5,
 		PrivPassword:  "bbbbbbbb",
-		PrivProtocol:  snmpclient2.Des,
+		PrivProtocol:  snmpclient2.DES,
 	})
 	var mss snmpclient2.Message = &snmpclient2.MessageV1{}
 	t.Log(mss.String())

@@ -22,7 +22,7 @@ func TestPasswordToKey(t *testing.T) {
 		0x52, 0x6f, 0x5e, 0xed, 0x9f, 0xcc, 0xe2, 0x6f,
 		0x89, 0x64, 0xc2, 0x93, 0x07, 0x87, 0xd8, 0x2b,
 	}
-	key := snmpclient2.PasswordToKey(snmpclient2.Md5, password, engineId)
+	key := snmpclient2.PasswordToKey(snmpclient2.MD5, password, engineId)
 	if !bytes.Equal(expBuf, key) {
 		t.Errorf("PasswordToKey(Md5) - expected [%s], actual [%s]",
 			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(key, " "))
@@ -32,7 +32,7 @@ func TestPasswordToKey(t *testing.T) {
 		0x66, 0x95, 0xfe, 0xbc, 0x92, 0x88, 0xe3, 0x62, 0x82, 0x23,
 		0x5f, 0xc7, 0x15, 0x1f, 0x12, 0x84, 0x97, 0xb3, 0x8f, 0x3f,
 	}
-	key = snmpclient2.PasswordToKey(snmpclient2.Sha, password, engineId)
+	key = snmpclient2.PasswordToKey(snmpclient2.SHA, password, engineId)
 	if !bytes.Equal(expBuf, key) {
 		t.Errorf("PasswordToKey(Aes) - expected [%s], actual [%s]",
 			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(key, " "))
@@ -46,7 +46,7 @@ func TestCipher(t *testing.T) {
 	engineBoots := int32(100)
 	engineTime := int32(1234567)
 
-	key := snmpclient2.PasswordToKey(snmpclient2.Sha, password, engineId)
+	key := snmpclient2.PasswordToKey(snmpclient2.SHA, password, engineId)
 
 	cipher, priv, err := snmpclient2.EncryptDES(original, key, engineBoots, 100)
 	if err != nil {
@@ -121,9 +121,9 @@ func aTestUsm(t *testing.T) {
 			UserName:        string(expUser),
 			SecurityLevel:   snmpclient2.AuthPriv,
 			AuthPassword:    "aaaaaaaa",
-			AuthProtocol:    snmpclient2.Md5,
+			AuthProtocol:    snmpclient2.MD5,
 			PrivPassword:    "bbbbbbbb",
-			PrivProtocol:    snmpclient2.Des,
+			PrivProtocol:    snmpclient2.DES,
 			ContextEngineId: hex.EncodeToString(expCtxId),
 			ContextName:     expCtxName,
 		})

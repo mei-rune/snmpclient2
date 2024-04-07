@@ -2,6 +2,7 @@ package snmpclient2
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/des"
@@ -17,6 +18,114 @@ import (
 
 	"github.com/runner-mei/snmpclient2/asn1"
 )
+
+
+
+// SnmpV3AuthProtocol describes the authentication protocol in use by an authenticated SnmpV3 connection.
+type AuthProtocol uint8
+
+// NoAuth, MD5, and SHA are implemented
+const (
+	NoAuth AuthProtocol = 1
+	MD5    AuthProtocol = 2
+	SHA    AuthProtocol = 3
+	SHA224 AuthProtocol = 4
+	SHA256 AuthProtocol = 5
+	SHA384 AuthProtocol = 6
+	SHA512 AuthProtocol = 7
+)
+
+func (protoc AuthProtocol) AuthParameterLength() int {
+	return macVarbinds[protoc].length
+}
+
+func (protoc AuthProtocol) validate() bool {
+	return protoc == MD5 ||
+		protoc == SHA ||
+		protoc == SHA224 ||
+		protoc == SHA256 ||
+		protoc == SHA384 ||
+		protoc == SHA512
+}
+
+//go:generate stringer -type=SnmpV3AuthProtocol
+
+// HashType maps the AuthProtocol's hash type to an actual crypto.Hash object.
+func (authProtocol AuthProtocol) HashType() crypto.Hash {
+	switch authProtocol {
+	default:
+		return crypto.MD5
+	case SHA:
+		return crypto.SHA1
+	case SHA224:
+		return crypto.SHA224
+	case SHA256:
+		return crypto.SHA256
+	case SHA384:
+		return crypto.SHA384
+	case SHA512:
+		return crypto.SHA512
+	}
+}
+
+//nolint:gochecknoglobals
+var macVarbinds = []struct{
+	length int
+}{
+	{},
+	{length: 0},
+	{length: 12},
+	{length: 12},
+	{length: 16},
+	{length: 24},
+	{length: 32},
+	{length: 48},
+}
+
+// SnmpV3PrivProtocol is the privacy protocol in use by an private SnmpV3 connection.
+type PrivProtocol uint8
+
+// NoPriv, DES implemented, AES planned
+// Changed: AES192, AES256, AES192C, AES256C added
+const (
+	NoPriv  PrivProtocol = 1
+	DES     PrivProtocol = 2
+	AES     PrivProtocol = 3
+	AES192  PrivProtocol = 4 // Blumenthal-AES192
+	AES256  PrivProtocol = 5 // Blumenthal-AES256
+	AES192C PrivProtocol = 6 // Reeder-AES192
+	AES256C PrivProtocol = 7 // Reeder-AES256
+)
+
+func (protoc PrivProtocol) validate() bool {
+	return protoc == DES ||
+		protoc == AES ||
+		protoc == AES192 ||
+		protoc == AES256 ||
+		protoc == AES192C ||
+		protoc == AES256C
+}
+
+type SecurityLevel int
+
+const (
+	NoAuthNoPriv SecurityLevel = iota
+	AuthNoPriv
+	AuthPriv
+)
+
+func (s SecurityLevel) String() string {
+	switch s {
+	case NoAuthNoPriv:
+		return "NoAuthNoPriv"
+	case AuthNoPriv:
+		return "AuthNoPriv"
+	case AuthPriv:
+		return "AuthPriv"
+	default:
+		return "Unknown"
+	}
+}
 
 type Security interface {
 	GenerateRequestMessage(*Arguments, Message) error
@@ -176,10 +285,14 @@ func (u *USM) GenerateRequestMessage(args *Arguments, sendMsg Message) (err erro
 			}
 		}
 
+
 		authKey := args.AuthKey
 		if len(authKey) == 0 {
 			authKey = PasswordToKey(args.AuthProtocol, args.AuthPassword, u.AuthEngineId)
 		}
+
+
+		// fmt.Println(args.UserName, args.AuthProtocol, args.AuthPassword, fmt.Sprintf("%x", u.AuthEngineId), fmt.Sprintf("%x", authKey))
 
 		// get digest of whole message
 		digest, err := mac(m, args.AuthProtocol, authKey)
@@ -391,8 +504,9 @@ func (u *USM) String() string {
 }
 
 func mac(msg *MessageV3, proto AuthProtocol, key []byte) ([]byte, error) {
+	authParameterLength := proto.AuthParameterLength()
 	tmp := msg.AuthParameter
-	msg.AuthParameter = padding([]byte{}, 12)
+	msg.AuthParameter = padding([]byte{}, authParameterLength)
 	msgBytes, err := msg.Marshal()
 	msg.AuthParameter = tmp
 	if err != nil {
@@ -404,15 +518,24 @@ func mac(msg *MessageV3, proto AuthProtocol, key []byte) ([]byte, error) {
 
 	var h hash.Hash
 	switch proto {
-	case Md5:
+	case MD5:
 		h = hmac.New(md5.New, key)
-	case Sha:
+	case SHA:
 		h = hmac.New(sha1.New, key)
+	case SHA224:
+		h = hmac.New(crypto.SHA224.New, key)
+	case SHA256:
+		h = hmac.New(crypto.SHA256.New, key)
+	case SHA384:
+		h = hmac.New(crypto.SHA384.New, key)
+	case SHA512:
+		h = hmac.New(crypto.SHA512.New, key)
 	default:
 		return nil, errors.New("'" + fmt.Sprint(proto) + "' is unsupported hash.")
 	}
+
 	h.Write(msgBytes)
-	return h.Sum(nil)[:12], nil
+	return h.Sum(nil)[:authParameterLength], nil
 }
 
 func encrypt(msg *MessageV3, proto PrivProtocol, key []byte) (err error) {
@@ -420,9 +543,12 @@ func encrypt(msg *MessageV3, proto PrivProtocol, key []byte) (err error) {
 	src := msg.PduBytes()
 
 	switch proto {
-	case Des:
+	case DES:
 		dst, priv, err = EncryptDES(src, key, int32(msg.AuthEngineBoots), genSalt32())
-	case Aes:
+	case AES:
+		dst, priv, err = EncryptAES(
+			src, key, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime), genSalt64())
+	case AES192:
 		dst, priv, err = EncryptAES(
 			src, key, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime), genSalt64())
 	default:
@@ -456,9 +582,9 @@ func decrypt(msg *MessageV3, proto PrivProtocol, key, privParam []byte) (err err
 
 	var dst []byte
 	switch proto {
-	case Des:
+	case DES:
 		dst, err = DecryptDES(raw.Bytes, key, privParam)
-	case Aes:
+	case AES:
 		dst, err = DecryptAES(
 			raw.Bytes, key, privParam, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime))
 	default:
@@ -575,10 +701,18 @@ func DecryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 func PasswordToKey(proto AuthProtocol, password string, engineId []byte) []byte {
 	var h hash.Hash
 	switch proto {
-	case Md5:
+	case MD5:
 		h = md5.New()
-	case Sha:
+	case SHA:
 		h = sha1.New()
+	case SHA224:
+		h = crypto.SHA224.New()
+	case SHA256:
+		h = crypto.SHA256.New()
+	case SHA384:
+		h = crypto.SHA384.New()
+	case SHA512:
+		h = crypto.SHA512.New()
 	default:
 		panic("unknow auth protocol")
 	}

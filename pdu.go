@@ -239,7 +239,6 @@ func (v sortableVarBinds) Less(i, j int) bool {
 // +------------+--------------+----------------+---------------+----------------------+
 // |  PDU Type  |  request id  |       0        |       0       |   variable bindings  |
 // +------------+--------------+----------------+---------------+----------------------+
-//
 type PDU interface {
 	PduType() PduType
 	RequestId() int

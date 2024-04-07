@@ -222,11 +222,11 @@ func (self *internal_pinger) serve() {
 
 			if errCount < 100 {
 				if strings.Contains(err.Error(), "No service is operating") { //Port Unreachable
-					errCount ++
+					errCount++
 					continue
 				}
 				if strings.Contains(err.Error(), "forcibly closed by the remote host") { //Port Unreachable
-					errCount ++
+					errCount++
 					continue
 				}
 			}

@@ -1,7 +1,6 @@
 package snmpclient2
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"net"
@@ -71,7 +70,7 @@ func (a *Arguments) validate() error {
 					Message: "AuthPassword is at least 8 characters in length",
 				}
 			}
-			if p := a.AuthProtocol; p != Md5 && p != Sha {
+			if p := a.AuthProtocol; !p.validate() {
 				return ArgumentError{
 					Value:   a.AuthProtocol,
 					Message: "Illegal AuthProtocol",
@@ -86,7 +85,7 @@ func (a *Arguments) validate() error {
 					Message: "PrivPassword is at least 8 characters in length",
 				}
 			}
-			if p := a.PrivProtocol; p != Des && p != Aes {
+			if p := a.PrivProtocol; !p.validate() {
 				return ArgumentError{
 					Value:   a.PrivProtocol,
 					Message: "Illegal PrivProtocol",
@@ -147,7 +146,7 @@ func (s *SNMP) Open() (err error) {
 
 	err = retry(int(s.args.Retries), func() error {
 		if s.args.Version == V3 {
-			return errors.New("discover is not implemented.") // s.mp.Security().Discover(&s.args)
+			return s.Discovery()
 		}
 		return nil
 	})
@@ -197,8 +196,96 @@ func (s *SNMP) GetNextRequest(oids Oids) (result PDU, err error) {
 	return
 }
 
-func (s *SNMP) GetBulkRequest(oids Oids, nonRepeaters, maxRepetitions int) (result PDU, err error) {
 
+
+
+func (s *SNMP) Discovery() error {
+	err := s.Open()
+	if  err != nil {
+		return err
+	}
+
+	usm := s.mp.Security().(*USM)
+	usm.AuthEngineId = nil
+	usm.AuthEngineBoots = 0
+	usm.AuthEngineTime = 0
+	// usm.AuthKey = nil
+	// usm.PrivKey = nil
+	usm.UpdatedTime = time.Now()
+
+	pdu := NewPduWithOids(V3, GetRequest, nil)
+	pdu.SetRequestId(genRequestId())
+	var sendMsg = NewMessage(V3, pdu)
+
+	sm := sendMsg.(*MessageV3)
+	sm.MessageId = genMessageId()
+	sm.MessageMaxSize = s.args.MessageMaxSize
+	sm.SecurityModel = securityUsm
+	sm.SetReportable(confirmedType(pdu.PduType()))
+	err = s.mp.Security().GenerateRequestMessage(&s.args, sendMsg)
+	if err != nil {
+		return err
+	}
+
+	var buf []byte
+	buf, err = sendMsg.Marshal()
+	if err != nil {
+		return err
+	}
+
+	s.conn.SetWriteDeadline(time.Now().Add(s.args.Timeout))
+	_, err = s.conn.Write(buf)
+	if !confirmedType(pdu.PduType()) || err != nil {
+		return err
+	}
+
+	size := s.args.MessageMaxSize
+	if size < recvBufferSize {
+		size = recvBufferSize
+	}
+	buf = make([]byte, size)
+	s.conn.SetReadDeadline(time.Now().Add(s.args.Timeout))
+	_, err = s.conn.Read(buf)
+	if err != nil {
+		return err
+	}
+
+
+	pdu = &ScopedPdu{}
+	recvMsg := NewMessage(V3, pdu)
+	_, err = recvMsg.Unmarshal(buf)
+	if err != nil {
+		return ResponseError{
+			Cause:   err,
+			Message: "Failed to Unmarshal message",
+			Detail:  fmt.Sprintf("message Bytes - [%s]", ToHexStr(buf, " ")),
+		}
+	}
+
+	rm := recvMsg.(*MessageV3)
+	if sm.Version() != rm.Version() {
+		return ResponseError{
+			Message: fmt.Sprintf(
+				"SnmpVersion mismatch - expected [%v], actual [%v]", sm.Version(), rm.Version()),
+			Detail: fmt.Sprintf("%s vs %s", sm, rm),
+		}
+	}
+	if sm.MessageId != rm.MessageId {
+		return ResponseError{
+			Message: fmt.Sprintf(
+				"MessageId mismatch - expected [%d], actual [%d]", sm.MessageId, rm.MessageId),
+			Detail: fmt.Sprintf("%s vs %s", sm, rm),
+		}
+	}
+
+	usm.AuthEngineId = rm.AuthEngineId
+	usm.AuthEngineBoots = rm.AuthEngineBoots
+	usm.AuthEngineTime = rm.AuthEngineTime
+	usm.UpdatedTime = time.Now()
+	return nil
+}
+
+func (s *SNMP) GetBulkRequest(oids Oids, nonRepeaters, maxRepetitions int) (result PDU, err error) {
 	if s.args.Version < V2c {
 		return nil, ArgumentError{
 			Value:   s.args.Version,
