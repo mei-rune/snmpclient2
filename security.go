@@ -53,7 +53,7 @@ func (protoc AuthProtocol) validate() bool {
 // HashType maps the AuthProtocol's hash type to an actual crypto.Hash object.
 func (authProtocol AuthProtocol) HashType() crypto.Hash {
 	switch authProtocol {
-	default:
+	case MD5:
 		return crypto.MD5
 	case SHA:
 		return crypto.SHA1
@@ -65,6 +65,8 @@ func (authProtocol AuthProtocol) HashType() crypto.Hash {
 		return crypto.SHA384
 	case SHA512:
 		return crypto.SHA512
+	default:
+		return crypto.MD5
 	}
 }
 
@@ -277,25 +279,34 @@ func (u *USM) GenerateRequestMessage(args *Arguments, sendMsg Message) (err erro
 		if m.Privacy() {
 			privKey := args.PrivKey
 			if len(privKey) == 0 {
-				privKey = PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+				privKey, err = genlocalPrivKey(args.PrivProtocol, args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+				if err != nil {
+					return err
+				}
 			}
+
+			fmt.Printf("%x\r\n", privKey)
+
 			err = encrypt(m, args.PrivProtocol, privKey)
+			if err != nil {
+			fmt.Println(err)
+				return err
+			}
+		}
+
+		authKey := args.AuthKey
+		if len(authKey) == 0 {
+			authKey, err = PasswordToKey(args.AuthProtocol, args.AuthPassword, u.AuthEngineId)
 			if err != nil {
 				return err
 			}
 		}
 
 
-		authKey := args.AuthKey
-		if len(authKey) == 0 {
-			authKey = PasswordToKey(args.AuthProtocol, args.AuthPassword, u.AuthEngineId)
-		}
-
-
 		// fmt.Println(args.UserName, args.AuthProtocol, args.AuthPassword, fmt.Sprintf("%x", u.AuthEngineId), fmt.Sprintf("%x", authKey))
 
 		// get digest of whole message
-		digest, err := mac(m, args.AuthProtocol, authKey)
+		digest, err := hMAC(m, args.AuthProtocol, authKey)
 		if err != nil {
 			return err
 		}
@@ -354,7 +365,7 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 		//		}
 
 		// get & check digest of whole message
-		// digest, e := mac(rm, args.AuthProtocol, u.AuthKey)
+		// digest, e := hMAC(rm, args.AuthProtocol, u.AuthKey)
 		// if e != nil {
 		// 	return ResponseError{
 		// 		Cause:   e,
@@ -370,13 +381,20 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 
 		// decrypt PDU
 		if rm.Privacy() {
+			var e error
 			privKey := args.PrivKey
 			if len(privKey) == 0 {
-				privKey = PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+				privKey, e = genlocalPrivKey(args.PrivProtocol, args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+				if e != nil {
+					return ResponseError{
+						Cause:   e,
+						Message: "PasswordToKey fail",
+					}
+				}
 			}
 
 			// PrivKey := PasswordToKey(args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
-			e := decrypt(rm, args.PrivProtocol, privKey, rm.PrivParameter)
+			e = decrypt(rm, args.PrivProtocol, privKey, rm.PrivParameter)
 			if e != nil {
 				return ResponseError{
 					Cause:   e,
@@ -503,7 +521,7 @@ func (u *USM) String() string {
 		u.UpdatedTime)
 }
 
-func mac(msg *MessageV3, proto AuthProtocol, key []byte) ([]byte, error) {
+func hMAC(msg *MessageV3, proto AuthProtocol, key []byte) ([]byte, error) {
 	authParameterLength := proto.AuthParameterLength()
 	tmp := msg.AuthParameter
 	msg.AuthParameter = padding([]byte{}, authParameterLength)
@@ -545,10 +563,7 @@ func encrypt(msg *MessageV3, proto PrivProtocol, key []byte) (err error) {
 	switch proto {
 	case DES:
 		dst, priv, err = EncryptDES(src, key, int32(msg.AuthEngineBoots), genSalt32())
-	case AES:
-		dst, priv, err = EncryptAES(
-			src, key, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime), genSalt64())
-	case AES192:
+	case AES, AES192, AES256:
 		dst, priv, err = EncryptAES(
 			src, key, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime), genSalt64())
 	default:
@@ -584,7 +599,7 @@ func decrypt(msg *MessageV3, proto PrivProtocol, key, privParam []byte) (err err
 	switch proto {
 	case DES:
 		dst, err = DecryptDES(raw.Bytes, key, privParam)
-	case AES:
+	case AES, AES192, AES256:
 		dst, err = DecryptAES(
 			raw.Bytes, key, privParam, int32(msg.AuthEngineBoots), int32(msg.AuthEngineTime))
 	default:
@@ -649,7 +664,14 @@ func DecryptDES(src, key, privParam []byte) (dst []byte, err error) {
 func EncryptAES(src, key []byte, engineBoots, engineTime int32, salt int64) (
 	dst, privParam []byte, err error) {
 
-	block, err := aes.NewCipher(key[:16])
+		// fmt.Printf("src=%x\r\n", src)
+		// fmt.Printf("key=%x\r\n", key)
+		// fmt.Printf("key16=%x\r\n", key[:16])
+		// fmt.Printf("engineBoots=%d\r\n", engineBoots)
+		// fmt.Printf("engineTime=%d\r\n", engineTime)
+		// fmt.Printf("salt=%d\r\n", salt)
+
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return
 	}
@@ -667,6 +689,10 @@ func EncryptAES(src, key []byte, engineBoots, engineTime int32, salt int64) (
 
 	mode := cipher.NewCFBEncrypter(block, iv)
 	mode.XORKeyStream(dst, src)
+
+
+		fmt.Printf("dst=%x\r\n", dst)
+		fmt.Printf("privParam=%x\r\n", privParam)
 	return
 }
 
@@ -681,7 +707,14 @@ func DecryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 		return
 	}
 
-	block, err := aes.NewCipher(key[:16])
+
+			fmt.Printf("src=%x\r\n", src)
+		fmt.Printf("key=%x\r\n", key)
+		fmt.Printf("key16=%x\r\n", key[:16])
+		fmt.Printf("engineBoots=%d\r\n", engineBoots)
+		fmt.Printf("engineTime=%d\r\n", engineTime)
+
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return
 	}
@@ -698,7 +731,118 @@ func DecryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 	return
 }
 
-func PasswordToKey(proto AuthProtocol, password string, engineId []byte) []byte {
+
+// // Extending the localized privacy key according to Reeder Key extension algorithm:
+// // https://tools.ietf.org/html/draft-reeder-snmpv3-usm-3dese
+// // Many vendors, including Cisco, use the 3DES key extension algorithm to extend the privacy keys that are too short when using AES,AES192 and AES256.
+// // Previously implemented in net-snmp and pysnmp libraries.
+// // Tested for AES128 and AES256
+// func extendKeyReeder(authProtocol SnmpV3AuthProtocol, password string, engineID string) ([]byte, error) {
+//   var key []byte
+//   var err error
+
+//   key, err = hMAC(authProtocol.HashType(), cacheKey(authProtocol, password), password, engineID)
+
+//   if err != nil {
+//     return nil, err
+//   }
+
+//   newkey, err := hMAC(authProtocol.HashType(), cacheKey(authProtocol, string(key)), string(key), engineID)
+
+//   return append(key, newkey...), err
+// }
+
+// // Extending the localized privacy key according to Blumenthal key extension algorithm:
+// // https://tools.ietf.org/html/draft-blumenthal-aes-usm-04#page-7
+// // Not many vendors use this algorithm.
+// // Previously implemented in the net-snmp and pysnmp libraries.
+// // TODO: Not tested
+// func extendKeyBlumenthal(authProtocol SnmpV3AuthProtocol, password string, engineID string) ([]byte, error) {
+//   var key []byte
+//   var err error
+
+//   key, err = hMAC(authProtocol.HashType(), cacheKey(authProtocol, password), password, engineID)
+
+//   if err != nil {
+//     return nil, err
+//   }
+
+//   newkey := authProtocol.HashType().New()
+//   _, _ = newkey.Write(key)
+//   return append(key, newkey.Sum(nil)...), err
+// }
+
+// Changed: New function to calculate the Privacy Key for abstract AES
+func genlocalPrivKey(privProtocol PrivProtocol, authProtocol AuthProtocol, password string, engineID []byte) ([]byte, error) {
+  var keylen int
+  var localPrivKey []byte
+  var err error
+
+  switch privProtocol {
+  case AES, DES:
+    keylen = 16
+  case AES192, AES192C:
+    keylen = 24
+  case AES256, AES256C:
+    keylen = 32
+  }
+
+  switch privProtocol {
+  case AES, AES192C, AES256C:
+    localPrivKey, err = extendKeyReeder(authProtocol, password, engineID)
+  case AES192, AES256:
+    localPrivKey, err = extendKeyBlumenthal(authProtocol, password, engineID)
+  default:
+    localPrivKey, err = PasswordToKey(authProtocol, password, engineID)
+  }
+  if err != nil {
+    return nil, err
+  }
+
+  if len(localPrivKey) < keylen {
+    return nil, fmt.Errorf("genlocalPrivKey: privProtocol: %v len(localPrivKey): %d, keylen: %d",
+      privProtocol, len(localPrivKey), keylen)
+  }
+
+  return localPrivKey[:keylen], nil
+}
+
+
+// Extending the localized privacy key according to Reeder Key extension algorithm:
+// https://tools.ietf.org/html/draft-reeder-snmpv3-usm-3dese
+// Many vendors, including Cisco, use the 3DES key extension algorithm to extend the privacy keys that are too short when using AES,AES192 and AES256.
+// Previously implemented in net-snmp and pysnmp libraries.
+// Tested for AES128 and AES256
+func extendKeyReeder(authProtocol AuthProtocol, password string, engineID []byte) ([]byte, error) {
+  key, err := PasswordToKey(authProtocol, password, engineID)
+  if err != nil {
+    return nil, err
+  }
+  newkey, err := passwordToKey(authProtocol, key, engineID)
+  return append(key, newkey...), err
+}
+
+// Extending the localized privacy key according to Blumenthal key extension algorithm:
+// https://tools.ietf.org/html/draft-blumenthal-aes-usm-04#page-7
+// Not many vendors use this algorithm.
+// Previously implemented in the net-snmp and pysnmp libraries.
+// TODO: Not tested
+func extendKeyBlumenthal(authProtocol AuthProtocol, password string, engineID []byte) ([]byte, error) {
+  key, err := PasswordToKey(authProtocol, password, engineID)
+  if err != nil {
+    return nil, err
+  }
+
+  newkey := authProtocol.HashType().New()
+  _, _ = newkey.Write(key)
+  return append(key, newkey.Sum(nil)...), err
+}
+
+func PasswordToKey(proto AuthProtocol, password string, engineId []byte) ([]byte, error) {
+	return  passwordToKey(proto, []byte(password), engineId)
+}
+
+func passwordToKey(proto AuthProtocol, password, engineId []byte) ([]byte, error) {
 	var h hash.Hash
 	switch proto {
 	case MD5:
@@ -714,17 +858,16 @@ func PasswordToKey(proto AuthProtocol, password string, engineId []byte) []byte 
 	case SHA512:
 		h = crypto.SHA512.New()
 	default:
-		panic("unknow auth protocol")
+    return nil, fmt.Errorf("unknow auth protocol: %d", proto)
 	}
 
-	pass := []byte(password)
-	plen := len(pass)
+	plen := len(password)
 	for i := mega / plen; i > 0; i-- {
-		h.Write(pass)
+		h.Write(password)
 	}
 	remain := mega % plen
 	if remain > 0 {
-		h.Write(pass[:remain])
+		h.Write(password[:remain])
 	}
 	ku := h.Sum(nil)
 
@@ -736,7 +879,7 @@ func PasswordToKey(proto AuthProtocol, password string, engineId []byte) []byte 
 	h.Write(ku)
 	h.Write(engineId)
 	h.Write(ku)
-	return h.Sum(nil)
+	return h.Sum(nil), nil
 
 	//return generate_localization_keys(crypto.MD5, ku, engineId)
 
@@ -744,6 +887,8 @@ func PasswordToKey(proto AuthProtocol, password string, engineId []byte) []byte 
 	// fmt.Println(ToHexStr(a, ""), e)
 	//return bs
 }
+
+
 
 // const (
 // 	SNMP_AUTH_KEY_LOOPCNT     = 1048576

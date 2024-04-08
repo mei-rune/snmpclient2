@@ -22,7 +22,11 @@ func TestPasswordToKey(t *testing.T) {
 		0x52, 0x6f, 0x5e, 0xed, 0x9f, 0xcc, 0xe2, 0x6f,
 		0x89, 0x64, 0xc2, 0x93, 0x07, 0x87, 0xd8, 0x2b,
 	}
-	key := snmpclient2.PasswordToKey(snmpclient2.MD5, password, engineId)
+	key, err := snmpclient2.PasswordToKey(snmpclient2.MD5, password, engineId)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if !bytes.Equal(expBuf, key) {
 		t.Errorf("PasswordToKey(Md5) - expected [%s], actual [%s]",
 			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(key, " "))
@@ -32,7 +36,11 @@ func TestPasswordToKey(t *testing.T) {
 		0x66, 0x95, 0xfe, 0xbc, 0x92, 0x88, 0xe3, 0x62, 0x82, 0x23,
 		0x5f, 0xc7, 0x15, 0x1f, 0x12, 0x84, 0x97, 0xb3, 0x8f, 0x3f,
 	}
-	key = snmpclient2.PasswordToKey(snmpclient2.SHA, password, engineId)
+	key, err = snmpclient2.PasswordToKey(snmpclient2.SHA, password, engineId)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if !bytes.Equal(expBuf, key) {
 		t.Errorf("PasswordToKey(Aes) - expected [%s], actual [%s]",
 			snmpclient2.ToHexStr(expBuf, " "), snmpclient2.ToHexStr(key, " "))
@@ -46,30 +54,40 @@ func TestCipher(t *testing.T) {
 	engineBoots := int32(100)
 	engineTime := int32(1234567)
 
-	key := snmpclient2.PasswordToKey(snmpclient2.SHA, password, engineId)
+	key, err := snmpclient2.PasswordToKey(snmpclient2.SHA, password, engineId)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	cipher, priv, err := snmpclient2.EncryptDES(original, key, engineBoots, 100)
 	if err != nil {
 		t.Errorf("DES Encrypt err %v", err)
+		return
 	}
 	result, err := snmpclient2.DecryptDES(cipher, key, priv)
 	if err != nil {
 		t.Errorf("DES Decrypt err %v", err)
+		return
 	}
 	if bytes.Equal(original, result) {
 		t.Errorf("DES Encrypt, Decrypt - expected [%s], actual [%s]", original, result)
+		return
 	}
 
 	cipher, priv, err = snmpclient2.EncryptAES(original, key, engineBoots, engineTime, 100)
 	if err != nil {
 		t.Errorf("AES Encrypt err %v", err)
+		return
 	}
 	result, err = snmpclient2.DecryptAES(cipher, key, priv, engineBoots, engineTime)
 	if err != nil {
 		t.Errorf("AES Decrypt err %v", err)
+		return
 	}
 	if bytes.Equal(original, result) {
 		t.Errorf("AES Encrypt, Decrypt - expected [%s], actual [%s]", original, result)
+		return
 	}
 }
 
@@ -350,3 +368,4 @@ func TestUsmTimeliness(t *testing.T) {
 		t.Errorf("Timeliness() - has error %v", err)
 	}
 }
+
