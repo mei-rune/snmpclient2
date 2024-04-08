@@ -139,7 +139,7 @@ func ParseSecurityLevel(s string) (SecurityLevel, error) {
 	switch s {
 	case "noAuthNoPriv", "NoAuthNoPriv", "noauthnopriv", "":
 		return NoAuthNoPriv, nil
-	case "authNoPriv", "AuthNoPriv", "authnopriv":
+	case "authNoPriv", "AuthNoPriv", "authnopriv", "authNopriv":
 		return AuthNoPriv, nil
 	case "authPriv", "AuthPriv", "authpriv":
 		return AuthPriv, nil
@@ -150,9 +150,9 @@ func ParseSecurityLevel(s string) (SecurityLevel, error) {
 
 func ParseAuthProtocol(s string) (AuthProtocol, error) {
 	switch s {
-	case "md5", "MD5":
+	case "md5", "MD5", "Md5":
 		return MD5, nil
-	case "sha", "SHA":
+	case "sha", "SHA", "Sha":
 		return SHA, nil
 	case "sha224", "SHA224":
 		return SHA224, nil

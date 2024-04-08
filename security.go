@@ -279,7 +279,7 @@ func (u *USM) GenerateRequestMessage(args *Arguments, sendMsg Message) (err erro
 		if m.Privacy() {
 			privKey := args.PrivKey
 			if len(privKey) == 0 {
-				privKey, err = genlocalPrivKey(args.PrivProtocol, args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+				privKey, err = GenlocalPrivKey(args.PrivProtocol, args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
 				if err != nil {
 					return err
 				}
@@ -384,7 +384,7 @@ func (u *USM) ProcessIncomingMessage(args *Arguments, recvMsg Message) (err erro
 			var e error
 			privKey := args.PrivKey
 			if len(privKey) == 0 {
-				privKey, e = genlocalPrivKey(args.PrivProtocol, args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
+				privKey, e = GenlocalPrivKey(args.PrivProtocol, args.AuthProtocol, args.PrivPassword, u.AuthEngineId)
 				if e != nil {
 					return ResponseError{
 						Cause:   e,
@@ -773,7 +773,7 @@ func DecryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 // }
 
 // Changed: New function to calculate the Privacy Key for abstract AES
-func genlocalPrivKey(privProtocol PrivProtocol, authProtocol AuthProtocol, password string, engineID []byte) ([]byte, error) {
+func GenlocalPrivKey(privProtocol PrivProtocol, authProtocol AuthProtocol, password string, engineID []byte) ([]byte, error) {
   var keylen int
   var localPrivKey []byte
   var err error
