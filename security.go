@@ -10,18 +10,18 @@ import (
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"hash"
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/runner-mei/snmpclient2/asn1"
 )
 
-
-
-// SnmpV3AuthProtocol describes the authentication protocol in use by an authenticated SnmpV3 connection.
+// AuthProtocol describes the authentication protocol in use by an authenticated SnmpV3 connection.
 type AuthProtocol uint8
 
 // NoAuth, MD5, and SHA are implemented
@@ -35,6 +35,63 @@ const (
 	SHA512 AuthProtocol = 7
 )
 
+var (
+	_ json.Marshaler   = NoAuth
+	_ json.Unmarshaler = new(AuthProtocol)
+)
+
+func (protoc AuthProtocol) MarshalJSON() ([]byte, error) {
+	switch protoc {
+	case NoAuth:
+		return []byte(`"NoAuth"`), nil
+	case MD5:
+		return []byte(`"MD5"`), nil
+	case SHA:
+		return []byte(`"SHA"`), nil
+	case SHA224:
+		return []byte(`"SHA224"`), nil
+	case SHA256:
+		return []byte(`"SHA256"`), nil
+	case SHA384:
+		return []byte(`"SHA384"`), nil
+	case SHA512:
+		return []byte(`"SHA512"`), nil
+	}
+	return nil, errors.New("AuthProtocol '" + strconv.FormatInt(int64(protoc), 10) + "' is unsupported.")
+}
+
+func (protoc *AuthProtocol) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("noauth")) || bytes.Equal(data, []byte(`"noauth"`)) ||
+		bytes.Equal(data, []byte("noAuth")) || bytes.Equal(data, []byte(`"noAuth"`)) ||
+		bytes.Equal(data, []byte("NoAuth")) || bytes.Equal(data, []byte(`"NoAuth"`)) ||
+		bytes.Equal(data, []byte("NOAUTH")) || bytes.Equal(data, []byte(`"NOAUTH"`)) {
+		*protoc = NoAuth
+	} else if bytes.Equal(data, []byte("md5")) || bytes.Equal(data, []byte("MD5")) ||
+		bytes.Equal(data, []byte(`"md5"`)) || bytes.Equal(data, []byte(`"MD5"`)) {
+		*protoc = MD5
+	} else if bytes.Equal(data, []byte("sha")) || bytes.Equal(data, []byte("SHA")) ||
+		bytes.Equal(data, []byte(`"sha"`)) || bytes.Equal(data, []byte(`"SHA"`)) {
+		*protoc = SHA
+	} else if bytes.Equal(data, []byte("sha224")) || bytes.Equal(data, []byte("SHA224")) ||
+		bytes.Equal(data, []byte(`"sha224"`)) || bytes.Equal(data, []byte(`"SHA224"`)) {
+		*protoc = SHA224
+	} else if bytes.Equal(data, []byte("sha256")) || bytes.Equal(data, []byte("SHA256")) ||
+		bytes.Equal(data, []byte(`"sha256"`)) || bytes.Equal(data, []byte(`"SHA256"`)) {
+		*protoc = SHA256
+	} else if bytes.Equal(data, []byte("sha384")) || bytes.Equal(data, []byte("SHA384")) ||
+		bytes.Equal(data, []byte(`"sha384"`)) || bytes.Equal(data, []byte(`"SHA384"`)) {
+		*protoc = SHA384
+	} else if bytes.Equal(data, []byte("sha512")) || bytes.Equal(data, []byte("SHA512")) ||
+		bytes.Equal(data, []byte(`"sha512"`)) || bytes.Equal(data, []byte(`"SHA512"`)) {
+		*protoc = SHA512
+	} else {
+		return errors.New("AuthProtocol '" + string(data) + "' is unsupported")
+	}
+	return nil
+}
+
+//go:generate stringer -type=AuthProtocol
+
 func (protoc AuthProtocol) AuthParameterLength() int {
 	return macVarbinds[protoc].length
 }
@@ -47,8 +104,6 @@ func (protoc AuthProtocol) validate() bool {
 		protoc == SHA384 ||
 		protoc == SHA512
 }
-
-//go:generate stringer -type=SnmpV3AuthProtocol
 
 // HashType maps the AuthProtocol's hash type to an actual crypto.Hash object.
 func (authProtocol AuthProtocol) HashType() crypto.Hash {
@@ -71,7 +126,7 @@ func (authProtocol AuthProtocol) HashType() crypto.Hash {
 }
 
 //nolint:gochecknoglobals
-var macVarbinds = []struct{
+var macVarbinds = []struct {
 	length int
 }{
 	{},
@@ -84,7 +139,7 @@ var macVarbinds = []struct{
 	{length: 48},
 }
 
-// SnmpV3PrivProtocol is the privacy protocol in use by an private SnmpV3 connection.
+// PrivProtocol is the privacy protocol in use by an private SnmpV3 connection.
 type PrivProtocol uint8
 
 // NoPriv, DES implemented, AES planned
@@ -99,6 +154,13 @@ const (
 	AES256C PrivProtocol = 7 // Reeder-AES256
 )
 
+var (
+	_ json.Marshaler   = NoPriv
+	_ json.Unmarshaler = new(PrivProtocol)
+)
+
+//go:generate stringer -type=PrivProtocol
+
 func (protoc PrivProtocol) validate() bool {
 	return protoc == DES ||
 		protoc == AES ||
@@ -106,6 +168,56 @@ func (protoc PrivProtocol) validate() bool {
 		protoc == AES256 ||
 		protoc == AES192C ||
 		protoc == AES256C
+}
+
+func (protoc PrivProtocol) MarshalJSON() ([]byte, error) {
+	switch protoc {
+	case NoPriv:
+		return []byte(`"NoPriv"`), nil
+	case DES:
+		return []byte(`"DES"`), nil
+	case AES:
+		return []byte(`"AES"`), nil
+	case AES192:
+		return []byte(`"AES192"`), nil
+	case AES256:
+		return []byte(`"AES256"`), nil
+	case AES192C:
+		return []byte(`"AES192C"`), nil
+	case AES256C:
+		return []byte(`"AES256C"`), nil
+	}
+	return nil, errors.New("PrivProtocol '" + strconv.FormatInt(int64(protoc), 10) + "' is unsupported.")
+}
+
+func (protoc *PrivProtocol) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("nopriv")) || bytes.Equal(data, []byte(`"nopriv"`)) ||
+		bytes.Equal(data, []byte("noPriv")) || bytes.Equal(data, []byte(`"noPriv"`)) ||
+		bytes.Equal(data, []byte("NoPriv")) || bytes.Equal(data, []byte(`"NoPriv"`)) ||
+		bytes.Equal(data, []byte("NOPRIV")) || bytes.Equal(data, []byte(`"NOPRIV"`)) {
+		*protoc = NoPriv
+	} else if bytes.Equal(data, []byte("des")) || bytes.Equal(data, []byte("DES")) ||
+		bytes.Equal(data, []byte(`"des"`)) || bytes.Equal(data, []byte(`"DES"`)) {
+		*protoc = DES
+	} else if bytes.Equal(data, []byte("aes")) || bytes.Equal(data, []byte("AES")) ||
+		bytes.Equal(data, []byte(`"aes"`)) || bytes.Equal(data, []byte(`"AES"`)) {
+		*protoc = AES
+	} else if bytes.Equal(data, []byte("aes192")) || bytes.Equal(data, []byte("AES192")) ||
+		bytes.Equal(data, []byte(`"aes192"`)) || bytes.Equal(data, []byte(`"AES192"`)) {
+		*protoc = AES192
+	} else if bytes.Equal(data, []byte("aes256")) || bytes.Equal(data, []byte("AES256")) ||
+		bytes.Equal(data, []byte(`"aes256"`)) || bytes.Equal(data, []byte(`"AES256"`)) {
+		*protoc = AES256
+	} else if bytes.Equal(data, []byte("aes192c")) || bytes.Equal(data, []byte("AES192C")) ||
+		bytes.Equal(data, []byte(`"aes192c"`)) || bytes.Equal(data, []byte(`"AES192C"`)) {
+		*protoc = AES192C
+	} else if bytes.Equal(data, []byte("aes256c")) || bytes.Equal(data, []byte("AES256C")) ||
+		bytes.Equal(data, []byte(`"aes256c"`)) || bytes.Equal(data, []byte(`"AES256C"`)) {
+		*protoc = AES256C
+	} else {
+		return errors.New("PrivProtocol '" + string(data) + "' is unsupported")
+	}
+	return nil
 }
 
 type SecurityLevel int
@@ -289,7 +401,7 @@ func (u *USM) GenerateRequestMessage(args *Arguments, sendMsg Message) (err erro
 
 			err = encrypt(m, args.PrivProtocol, privKey)
 			if err != nil {
-			fmt.Println(err)
+				fmt.Println(err)
 				return err
 			}
 		}
@@ -301,7 +413,6 @@ func (u *USM) GenerateRequestMessage(args *Arguments, sendMsg Message) (err erro
 				return err
 			}
 		}
-
 
 		// fmt.Println(args.UserName, args.AuthProtocol, args.AuthPassword, fmt.Sprintf("%x", u.AuthEngineId), fmt.Sprintf("%x", authKey))
 
@@ -664,12 +775,12 @@ func DecryptDES(src, key, privParam []byte) (dst []byte, err error) {
 func EncryptAES(src, key []byte, engineBoots, engineTime int32, salt int64) (
 	dst, privParam []byte, err error) {
 
-		// fmt.Printf("src=%x\r\n", src)
-		// fmt.Printf("key=%x\r\n", key)
-		// fmt.Printf("key16=%x\r\n", key[:16])
-		// fmt.Printf("engineBoots=%d\r\n", engineBoots)
-		// fmt.Printf("engineTime=%d\r\n", engineTime)
-		// fmt.Printf("salt=%d\r\n", salt)
+	// fmt.Printf("src=%x\r\n", src)
+	// fmt.Printf("key=%x\r\n", key)
+	// fmt.Printf("key16=%x\r\n", key[:16])
+	// fmt.Printf("engineBoots=%d\r\n", engineBoots)
+	// fmt.Printf("engineTime=%d\r\n", engineTime)
+	// fmt.Printf("salt=%d\r\n", salt)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -690,9 +801,8 @@ func EncryptAES(src, key []byte, engineBoots, engineTime int32, salt int64) (
 	mode := cipher.NewCFBEncrypter(block, iv)
 	mode.XORKeyStream(dst, src)
 
-
-		fmt.Printf("dst=%x\r\n", dst)
-		fmt.Printf("privParam=%x\r\n", privParam)
+	fmt.Printf("dst=%x\r\n", dst)
+	fmt.Printf("privParam=%x\r\n", privParam)
 	return
 }
 
@@ -707,12 +817,11 @@ func DecryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 		return
 	}
 
-
-			fmt.Printf("src=%x\r\n", src)
-		fmt.Printf("key=%x\r\n", key)
-		fmt.Printf("key16=%x\r\n", key[:16])
-		fmt.Printf("engineBoots=%d\r\n", engineBoots)
-		fmt.Printf("engineTime=%d\r\n", engineTime)
+	fmt.Printf("src=%x\r\n", src)
+	fmt.Printf("key=%x\r\n", key)
+	fmt.Printf("key16=%x\r\n", key[:16])
+	fmt.Printf("engineBoots=%d\r\n", engineBoots)
+	fmt.Printf("engineTime=%d\r\n", engineTime)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -730,7 +839,6 @@ func DecryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 	mode.XORKeyStream(dst, src)
 	return
 }
-
 
 // // Extending the localized privacy key according to Reeder Key extension algorithm:
 // // https://tools.ietf.org/html/draft-reeder-snmpv3-usm-3dese
@@ -774,39 +882,38 @@ func DecryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 
 // Changed: New function to calculate the Privacy Key for abstract AES
 func GenlocalPrivKey(privProtocol PrivProtocol, authProtocol AuthProtocol, password string, engineID []byte) ([]byte, error) {
-  var keylen int
-  var localPrivKey []byte
-  var err error
+	var keylen int
+	var localPrivKey []byte
+	var err error
 
-  switch privProtocol {
-  case AES, DES:
-    keylen = 16
-  case AES192, AES192C:
-    keylen = 24
-  case AES256, AES256C:
-    keylen = 32
-  }
+	switch privProtocol {
+	case AES, DES:
+		keylen = 16
+	case AES192, AES192C:
+		keylen = 24
+	case AES256, AES256C:
+		keylen = 32
+	}
 
-  switch privProtocol {
-  case AES, AES192C, AES256C:
-    localPrivKey, err = extendKeyReeder(authProtocol, password, engineID)
-  case AES192, AES256:
-    localPrivKey, err = extendKeyBlumenthal(authProtocol, password, engineID)
-  default:
-    localPrivKey, err = PasswordToKey(authProtocol, password, engineID)
-  }
-  if err != nil {
-    return nil, err
-  }
+	switch privProtocol {
+	case AES, AES192C, AES256C:
+		localPrivKey, err = extendKeyReeder(authProtocol, password, engineID)
+	case AES192, AES256:
+		localPrivKey, err = extendKeyBlumenthal(authProtocol, password, engineID)
+	default:
+		localPrivKey, err = PasswordToKey(authProtocol, password, engineID)
+	}
+	if err != nil {
+		return nil, err
+	}
 
-  if len(localPrivKey) < keylen {
-    return nil, fmt.Errorf("genlocalPrivKey: privProtocol: %v len(localPrivKey): %d, keylen: %d",
-      privProtocol, len(localPrivKey), keylen)
-  }
+	if len(localPrivKey) < keylen {
+		return nil, fmt.Errorf("genlocalPrivKey: privProtocol: %v len(localPrivKey): %d, keylen: %d",
+			privProtocol, len(localPrivKey), keylen)
+	}
 
-  return localPrivKey[:keylen], nil
+	return localPrivKey[:keylen], nil
 }
-
 
 // Extending the localized privacy key according to Reeder Key extension algorithm:
 // https://tools.ietf.org/html/draft-reeder-snmpv3-usm-3dese
@@ -814,12 +921,12 @@ func GenlocalPrivKey(privProtocol PrivProtocol, authProtocol AuthProtocol, passw
 // Previously implemented in net-snmp and pysnmp libraries.
 // Tested for AES128 and AES256
 func extendKeyReeder(authProtocol AuthProtocol, password string, engineID []byte) ([]byte, error) {
-  key, err := PasswordToKey(authProtocol, password, engineID)
-  if err != nil {
-    return nil, err
-  }
-  newkey, err := passwordToKey(authProtocol, key, engineID)
-  return append(key, newkey...), err
+	key, err := PasswordToKey(authProtocol, password, engineID)
+	if err != nil {
+		return nil, err
+	}
+	newkey, err := passwordToKey(authProtocol, key, engineID)
+	return append(key, newkey...), err
 }
 
 // Extending the localized privacy key according to Blumenthal key extension algorithm:
@@ -828,18 +935,18 @@ func extendKeyReeder(authProtocol AuthProtocol, password string, engineID []byte
 // Previously implemented in the net-snmp and pysnmp libraries.
 // TODO: Not tested
 func extendKeyBlumenthal(authProtocol AuthProtocol, password string, engineID []byte) ([]byte, error) {
-  key, err := PasswordToKey(authProtocol, password, engineID)
-  if err != nil {
-    return nil, err
-  }
+	key, err := PasswordToKey(authProtocol, password, engineID)
+	if err != nil {
+		return nil, err
+	}
 
-  newkey := authProtocol.HashType().New()
-  _, _ = newkey.Write(key)
-  return append(key, newkey.Sum(nil)...), err
+	newkey := authProtocol.HashType().New()
+	_, _ = newkey.Write(key)
+	return append(key, newkey.Sum(nil)...), err
 }
 
 func PasswordToKey(proto AuthProtocol, password string, engineId []byte) ([]byte, error) {
-	return  passwordToKey(proto, []byte(password), engineId)
+	return passwordToKey(proto, []byte(password), engineId)
 }
 
 func passwordToKey(proto AuthProtocol, password, engineId []byte) ([]byte, error) {
@@ -858,7 +965,7 @@ func passwordToKey(proto AuthProtocol, password, engineId []byte) ([]byte, error
 	case SHA512:
 		h = crypto.SHA512.New()
 	default:
-    return nil, fmt.Errorf("unknow auth protocol: %d", proto)
+		return nil, fmt.Errorf("unknow auth protocol: %d", proto)
 	}
 
 	plen := len(password)
@@ -887,8 +994,6 @@ func passwordToKey(proto AuthProtocol, password, engineId []byte) ([]byte, error
 	// fmt.Println(ToHexStr(a, ""), e)
 	//return bs
 }
-
-
 
 // const (
 // 	SNMP_AUTH_KEY_LOOPCNT     = 1048576

@@ -196,12 +196,9 @@ func (s *SNMP) GetNextRequest(oids Oids) (result PDU, err error) {
 	return
 }
 
-
-
-
 func (s *SNMP) Discovery() error {
 	err := s.Open()
-	if  err != nil {
+	if err != nil {
 		return err
 	}
 
@@ -249,7 +246,6 @@ func (s *SNMP) Discovery() error {
 	if err != nil {
 		return err
 	}
-
 
 	pdu = &ScopedPdu{}
 	recvMsg := NewMessage(V3, pdu)

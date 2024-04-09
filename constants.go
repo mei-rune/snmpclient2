@@ -149,7 +149,6 @@ func (e ErrorStatus) String() string {
 	}
 }
 
-
 const (
 	timeoutDefault = 5 * time.Second
 	recvBufferSize = 1 << 11

@@ -119,7 +119,7 @@ func TestSNMP(t *testing.T) {
 }
 
 // 安全级别：authpriv 安全名：mfk2 授权方式：MD5 授权密码：mfk123456 加密方式：DES 加密密码：mfk123456
-// 安全级别：authpriv 安全名：mfk3 授权方式：SHA 授权密码：mfk123456 加密方式：AES 加密密码：mfk123456 
+// 安全级别：authpriv 安全名：mfk3 授权方式：SHA 授权密码：mfk123456 加密方式：AES 加密密码：mfk123456
 
 func TestSNMPGetDES(t *testing.T) {
 	snmp, err := snmpclient2.NewSNMP("udp", "127.0.0.1:161", snmpclient2.Arguments{
@@ -128,7 +128,7 @@ func TestSNMPGetDES(t *testing.T) {
 		SecurityLevel: snmpclient2.AuthPriv,
 		AuthProtocol:  snmpclient2.MD5,
 		AuthPassword:  "mfk1!@#$&",
-		PrivProtocol:   snmpclient2.DES,
+		PrivProtocol:  snmpclient2.DES,
 		PrivPassword:  "mfk1!@#$&",
 	})
 	if err != nil {
@@ -143,7 +143,7 @@ func TestSNMPGetDES(t *testing.T) {
 		return
 	}
 	defer snmp.Close()
-	
+
 	if err = snmp.Discovery(); err != nil {
 		// Failed to open connection
 		t.Error(err)
@@ -178,7 +178,6 @@ func TestSNMPGetDES(t *testing.T) {
 	// select a VariableBinding
 	t.Log(pdu.VariableBindings().MatchOid(oids[0]))
 }
-
 
 func TestSNMPGetAES(t *testing.T) {
 	snmp, err := snmpclient2.NewSNMP("udp", "127.0.0.1:161", snmpclient2.Arguments{
@@ -187,7 +186,7 @@ func TestSNMPGetAES(t *testing.T) {
 		SecurityLevel: snmpclient2.AuthPriv,
 		AuthProtocol:  snmpclient2.SHA,
 		AuthPassword:  "mfk1!@#$&",
-		PrivProtocol:   snmpclient2.AES,
+		PrivProtocol:  snmpclient2.AES,
 		PrivPassword:  "mfk1!@#$&",
 	})
 	if err != nil {
@@ -202,7 +201,7 @@ func TestSNMPGetAES(t *testing.T) {
 		return
 	}
 	defer snmp.Close()
-	
+
 	if err = snmp.Discovery(); err != nil {
 		// Failed to open connection
 		t.Error(err)
@@ -238,7 +237,6 @@ func TestSNMPGetAES(t *testing.T) {
 	t.Log(pdu.VariableBindings().MatchOid(oids[0]))
 }
 
-
 func TestSNMPGetAES192(t *testing.T) {
 	snmp, err := snmpclient2.NewSNMP("udp", "127.0.0.1:161", snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
@@ -246,7 +244,7 @@ func TestSNMPGetAES192(t *testing.T) {
 		SecurityLevel: snmpclient2.AuthPriv,
 		AuthProtocol:  snmpclient2.SHA384,
 		AuthPassword:  "testingpass7323456",
-		PrivProtocol:   snmpclient2.AES192,
+		PrivProtocol:  snmpclient2.AES192,
 		PrivPassword:  "testingpass7223456",
 	})
 	if err != nil {
@@ -261,7 +259,7 @@ func TestSNMPGetAES192(t *testing.T) {
 		return
 	}
 	defer snmp.Close()
-	
+
 	if err = snmp.Discovery(); err != nil {
 		// Failed to open connection
 		t.Error(err)
@@ -304,7 +302,7 @@ func TestSNMPGetAES256(t *testing.T) {
 		SecurityLevel: snmpclient2.AuthPriv,
 		AuthProtocol:  snmpclient2.SHA512,
 		AuthPassword:  "testingpass7423456",
-		PrivProtocol:   snmpclient2.AES256,
+		PrivProtocol:  snmpclient2.AES256,
 		PrivPassword:  "testingpass7423456",
 	})
 	if err != nil {
@@ -319,7 +317,7 @@ func TestSNMPGetAES256(t *testing.T) {
 		return
 	}
 	defer snmp.Close()
-	
+
 	if err = snmp.Discovery(); err != nil {
 		// Failed to open connection
 		t.Error(err)
@@ -355,7 +353,6 @@ func TestSNMPGetAES256(t *testing.T) {
 	t.Log(pdu.VariableBindings().MatchOid(oids[0]))
 }
 
-
 func TestSNMPGetSha512(t *testing.T) {
 	snmp, err := snmpclient2.NewSNMP("udp", "127.0.0.1:161", snmpclient2.Arguments{
 		Version:       snmpclient2.V3,
@@ -376,7 +373,7 @@ func TestSNMPGetSha512(t *testing.T) {
 		return
 	}
 	defer snmp.Close()
-	
+
 	if err = snmp.Discovery(); err != nil {
 		// Failed to open connection
 		t.Error(err)
