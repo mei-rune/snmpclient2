@@ -397,7 +397,7 @@ func (u *USM) GenerateRequestMessage(args *Arguments, sendMsg Message) (err erro
 				}
 			}
 
-			fmt.Printf("%x\r\n", privKey)
+			// fmt.Printf("%x\r\n", privKey)
 
 			err = encrypt(m, args.PrivProtocol, privKey)
 			if err != nil {
@@ -801,8 +801,8 @@ func EncryptAES(src, key []byte, engineBoots, engineTime int32, salt int64) (
 	mode := cipher.NewCFBEncrypter(block, iv)
 	mode.XORKeyStream(dst, src)
 
-	fmt.Printf("dst=%x\r\n", dst)
-	fmt.Printf("privParam=%x\r\n", privParam)
+	// fmt.Printf("dst=%x\r\n", dst)
+	// fmt.Printf("privParam=%x\r\n", privParam)
 	return
 }
 
@@ -817,11 +817,11 @@ func DecryptAES(src, key, privParam []byte, engineBoots, engineTime int32) (
 		return
 	}
 
-	fmt.Printf("src=%x\r\n", src)
-	fmt.Printf("key=%x\r\n", key)
-	fmt.Printf("key16=%x\r\n", key[:16])
-	fmt.Printf("engineBoots=%d\r\n", engineBoots)
-	fmt.Printf("engineTime=%d\r\n", engineTime)
+	// fmt.Printf("src=%x\r\n", src)
+	// fmt.Printf("key=%x\r\n", key)
+	// fmt.Printf("key16=%x\r\n", key[:16])
+	// fmt.Printf("engineBoots=%d\r\n", engineBoots)
+	// fmt.Printf("engineTime=%d\r\n", engineTime)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
