@@ -93,15 +93,15 @@ func (self *internal_pinger) GetChannel() <-chan *PingResult {
 
 var emptyParams = map[string]string{}
 
-func (self *internal_pinger) SendWith(raddr string) error {
+func (self *internal_pinger) SendWith(raddr string, oid []int) error {
 	ra, err := net.ResolveUDPAddr(self.network, raddr)
 	if err != nil {
 		return fmt.Errorf("ResolveIPAddr(%q, %q) failed: %v", self.network, raddr, err)
 	}
-	return self.Send(0, ra, nil)
+	return self.Send(0, ra, nil, oid)
 }
 
-func (self *internal_pinger) Send(id int, ra *net.UDPAddr, args *Arguments) error {
+func (self *internal_pinger) Send(id int, ra *net.UDPAddr, args *Arguments, oid []int) error {
 	if 0 == id {
 		self.id++
 		id = self.id
@@ -109,12 +109,15 @@ func (self *internal_pinger) Send(id int, ra *net.UDPAddr, args *Arguments) erro
 	if args == nil {
 		args = self.args
 	}
+	if oid == nil {
+		oid = testOid
+	}
 
 	var msg Message
 	switch args.Version {
 	case V1, V2c:
 		//requestId: id, community: community
-		pdu := NewPduWithOids(args.Version, GetRequest, []Oid{Oid{Value: testOid}})
+		pdu := NewPduWithOids(args.Version, GetRequest, []Oid{Oid{Value: oid}})
 		pdu.SetRequestId(id)
 		m := &MessageV1{
 			version: args.Version,
@@ -356,12 +359,12 @@ func (self *Pingers) Length() int {
 	return len(self.internals)
 }
 
-func (self *Pingers) SendWith(idx int, raddr *net.UDPAddr) error {
-	return self.internals[idx].Send(0, raddr, nil)
+func (self *Pingers) SendWith(idx int, raddr *net.UDPAddr, oid []int) error {
+	return self.internals[idx].Send(0, raddr, nil, oid)
 }
 
-func (self *Pingers) Send(idx int, raddr string) error {
-	return self.internals[idx].SendWith(raddr)
+func (self *Pingers) Send(idx int, raddr string, oid []int) error {
+	return self.internals[idx].SendWith(raddr, oid)
 }
 
 func (self *Pingers) Recv(timeout time.Duration) (net.Addr, SnmpVersion, error) {
@@ -408,30 +411,30 @@ func (self *Pinger) GetChannel() <-chan *PingResult {
 	return self.ch
 }
 
-func (self *Pinger) SendV2(id int, ra *net.UDPAddr, version SnmpVersion, community string) error {
-	return self.Send(id, ra, &Arguments{Version: version, Community: community})
+func (self *Pinger) SendV2(id int, ra *net.UDPAddr, version SnmpVersion, community string, oid []int) error {
+	return self.Send(id, ra, &Arguments{Version: version, Community: community}, oid)
 }
 
-func (self *Pinger) SendV2With(id int, raddr string, version SnmpVersion, community string) error {
+func (self *Pinger) SendV2With(id int, raddr string, version SnmpVersion, community string, oid []int) error {
 	ra, err := net.ResolveUDPAddr(self.internal.network, raddr)
 	if err != nil {
 		return fmt.Errorf("ResolveIPAddr(%q, %q) failed: %v", self.internal.network, raddr, err)
 	}
 
-	return self.SendV2(id, ra, version, community)
+	return self.SendV2(id, ra, version, community, oid)
 }
 
-func (self *Pinger) SendV3(id int, raddr, username string) error {
+func (self *Pinger) SendV3(id int, raddr, username string, oid []int) error {
 	ra, err := net.ResolveUDPAddr(self.internal.network, raddr)
 	if err != nil {
 		return fmt.Errorf("ResolveIPAddr(%q, %q) failed: %v", self.internal.network, raddr, err)
 	}
 
-	return self.Send(id, ra, &Arguments{Version: V3, UserName: username})
+	return self.Send(id, ra, &Arguments{Version: V3, UserName: username}, oid)
 }
 
-func (self *Pinger) Send(id int, ra *net.UDPAddr, args *Arguments) error {
-	return self.internal.Send(id, ra, args)
+func (self *Pinger) Send(id int, ra *net.UDPAddr, args *Arguments, oid []int) error {
+	return self.internal.Send(id, ra, args, oid)
 }
 
 func (self *Pinger) Recv(timeout time.Duration) (net.Addr, SnmpVersion, error) {
